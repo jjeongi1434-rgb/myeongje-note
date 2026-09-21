@@ -492,9 +492,15 @@ const STEPS=[
  ],
  closing:'정리가 끝났어요. 다음은 학습지의 유형 문제로 연습해 볼까요?'},
 
-{id:'ex',part:'Ⅲ. 유형 문제 풀기',title:'유형 문제 ① ~ ⑤ (명제·부정·모든/어떤·진리집합)',short:'유형 문제',quizOnly:true,
- intro:()=>`<p>선생님 학습지의 유형 문제예요. 정리표에서 정리한 기준으로 먼저 풀고, “채점하기”로 확인한 뒤 틀린 문항은 <b>왜 틀렸는지</b> 아래 성찰란에 적어 두세요.</p>`,
- draft:[{k:'wrong',label:'틀린 문항과 그 이유 (다음에 같은 오류를 피하기 위한 나의 체크리스트)',type:'textarea',req:1,rows:3,help:'모두 맞았다면 “없음”과 가장 헷갈렸던 문항을 써 주세요.'}],
+{id:'ex',part:'Ⅲ. 유형 문제 오답 정리',title:'유형 문제 ① ~ ⑤ 오답 정리',short:'오답 정리',quizOnly:true,
+ intro:()=>`<p>1~5단계 끝에서 푼 <b>유형 문제 ①~⑤</b>(명제·조건 / 참·거짓 / 부정 / 모든·어떤 / 진리집합)를 돌아보는 시간이에요. 아래 현황표에서 아직 풀지 않은 유형을 마무리하고, 틀린 문항은 <b>왜 틀렸는지</b> 유형별로 정리해 두세요.</p>`,
+ draft:[
+  {k:'w1',label:'유형 ① 명제·조건 판별 — 틀린 문항과 이유',type:'textarea',req:1,rows:2,help:'모두 맞았다면 “없음”과 가장 헷갈렸던 문항을 써 주세요.'},
+  {k:'w2',label:'유형 ② 참·거짓 판별 — 틀린 문항과 이유',type:'textarea',req:1,rows:2},
+  {k:'w3',label:'유형 ③ 명제의 부정 — 틀린 문항과 이유',type:'textarea',req:1,rows:2},
+  {k:'w4',label:'유형 ④ ‘모든’·‘어떤’ — 틀린 문항과 이유',type:'textarea',req:1,rows:2},
+  {k:'w5',label:'유형 ⑤ 진리집합 — 틀린 문항과 이유',type:'textarea',req:1,rows:2},
+  {k:'wrong',label:'다음에 같은 오류를 피하기 위한 나의 체크리스트 (한 줄씩)',type:'textarea',req:1,rows:3}],
  closing:'좋아요. 이제 선생님과 함께 “p이면 q이다” 꼴의 명제를 개념정리해 볼까요?'},
 
 {id:'s6',part:'Ⅳ. 선생님과 함께하는 개념정리',title:'개념정리 ① 명제 p → q',short:'p → q',
@@ -813,7 +819,7 @@ const LESSONS=[
  {n:1,title:'명제와 조건',goal:'명제와 조건의 뜻을 알고, 내가 만든 문장의 참·거짓을 근거를 들어 판별할 수 있다.',steps:['s1','s2']},
  {n:2,title:'명제의 부정과 ‘모든’·‘어떤’',goal:'명제의 부정을 만들고, ‘모든’·‘어떤’을 포함한 명제의 참·거짓과 부정을 설명할 수 있다.',steps:['s3','s4']},
  {n:3,title:'진리집합과 명제 정리',goal:'조건의 진리집합을 구하고, 1~2차시의 탐구를 정리표로 정리할 수 있다.',steps:['s5','sum']},
- {n:4,title:'유형 문제로 다지기',goal:'명제·부정·모든/어떤·진리집합 유형 문제를 풀고 오답을 스스로 정리할 수 있다.',steps:['ex']},
+ {n:4,title:'유형 문제 오답 정리',goal:'1~5단계에서 푼 유형 문제를 돌아보고, 틀린 이유를 유형별로 정리하여 나의 체크리스트를 만들 수 있다.',steps:['ex']},
  {n:5,title:'명제 p → q',goal:'가정과 결론을 구분하고, 진리집합의 포함 관계로 p → q의 참·거짓을 판별하며 반례를 들 수 있다.',steps:['s6']},
  {n:6,title:'명제의 역과 대우',goal:'명제의 역과 대우를 만들고, 명제와 그 대우의 참·거짓이 일치함을 설명할 수 있다.',steps:['s7']},
  {n:7,title:'충분조건과 필요조건',goal:'충분조건·필요조건·필요충분조건을 진리집합의 포함 관계로 판단할 수 있다.',steps:['s8']},
@@ -823,8 +829,11 @@ const LESSONS=[
 ];
 LESSONS.forEach(L=>L.steps.forEach(id=>{const st_=STEPS.find(x=>x.id===id);st_.lesson=L}));
 function lessonStatus(L){const d=L.steps.filter(id=>st(id).done).length;return d===L.steps.length?'done':d||L.steps.some(id=>stepStatus(STEPS.find(x=>x.id===id)))?'started':''}
-const EXQ=[];STEPS.forEach(s=>{if(['s1','s2','s3','s4','s5'].includes(s.id)&&s.quiz){EXQ.push(s.quiz);s.quiz=null}});
-STEPS.forEach(s=>{s.draft=s.draft||[];s.revise=s.revise||[];s.quizzes=s.id==='ex'?EXQ:[...(s.pre||[]).map(q=>({...q,pre:true})),s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
+STEPS.forEach(s=>{s.draft=s.draft||[];s.revise=s.revise||[];s.quizzes=[...(s.pre||[]).map(q=>({...q,pre:true})),s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
+/* 오답 정리 화면: 1~5단계 유형 문제 결과 요약 */
+function quizSummaryHTML(){const rows=[];STEPS.filter(x=>['s1','s2','s3','s4','s5'].includes(x.id)).forEach(x=>{x.quizzes.forEach((q,qi)=>{if(q.pre||q.teacherOnly)return;const key=qkey(qi);const d=st(x.id);const ans=d[key]||{};const n=q.items.length,done=q.items.filter((_,i)=>ans[i]).length;const sc=quizScore(x.id,q,key);
+  rows.push(`<tr><td>${esc(q.title)}</td><td>${done}/${n}</td><td>${d[key+'Checked']&&sc.n?`${sc.ok}/${sc.n}`:'—'}</td><td><button class="btn sm" onclick="go('step','${x.id}');setTimeout(()=>{const e=document.getElementById('qz_${x.id}_${qi}');e&&e.scrollIntoView({behavior:'smooth'})},50)">문제로 가기</button></td></tr>`)})});
+  return `<div class="card"><h3><span class="num">점검</span>유형 문제 풀이 현황</h3><p class="small">유형 문제는 1~5단계의 각 내용 끝에 있어요. 아직 풀지 않았거나 채점하지 않은 유형은 “문제로 가기”로 이동해 마무리하세요.</p><table style="width:100%;border-collapse:collapse;font-size:14px" class="list"><tr><th>유형</th><th>푼 문항</th><th>선택형 정답</th><th></th></tr>${rows.join('')}</table></div>`}
 function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:getP(),r1_tf:g('s2','tf2')||g('s2','tf'),r1_neg:g('s3','neg2')||g('s3','neg'),r1_ntf:g('s3','tf2')||g('s3','tf'),
   r2_s:g('s4','all_s'),r2_tf:g('s4','all_tf'),r2_neg:g('s4','neg_all'),r2_ntf:g('s4','all_tf')==='참'?'거짓':g('s4','all_tf')==='거짓'?'참':'',
   r3_s:g('s4','some_s'),r3_tf:g('s4','some_tf'),r3_neg:g('s4','neg_some'),r3_ntf:g('s4','some_tf')==='참'?'거짓':g('s4','some_tf')==='거짓'?'참':'',
@@ -866,7 +875,7 @@ function renderHome(){const s=S.student;
   <p>이 노트는 <b>내가 만든 문장</b>으로 명제 단원을 탐구하고 기록하는 활동지예요. 정답을 먼저 보여 주지 않으니, 틀려도 괜찮으니 먼저 생각을 적어 보세요.</p>
   <table class="reveal" style="font-size:14px"><tr><th style="width:34%">Ⅰ. 나만의 문장으로 명제 이해하기</th><td>내 문장 하나로 5단계 탐구 (명제/조건 → 참·거짓 → 부정 → 모든/어떤 → 진리집합). 초안 → 판정 기준 → 고쳐 쓰기 순서로 진행하고 나만의 판별 기준을 써요.</td></tr>
   <tr><th>Ⅱ. 선생님과 함께하는 명제 정리하기</th><td>개념 확인 빈칸 + <b>정리표</b>(문장·참거짓·부정문·진리집합)를 깨끗하게 정리</td></tr>
-  <tr><th>Ⅲ. 유형 문제 풀기</th><td>학습지 유형 문제 ①~⑤ 채점과 오답 정리</td></tr>
+  <tr><th>Ⅲ. 유형 문제 오답 정리</th><td>1~5단계 끝의 학습지 유형 문제 ①~⑤ 풀이 현황과 유형별 오답 정리</td></tr>
   <tr><th>Ⅳ. 선생님과 함께하는 개념정리</th><td>개념정리 ① p → q ② 역과 대우 ③ 충분·필요조건 — 빈칸 채우기 → 내 명제로 탐구 → 문제</td></tr>
   <tr><th>Ⅴ. 교과서로 확장하기</th><td>정의·정리와 증명(대우·귀류법), 절대부등식</td></tr>
   <tr><th>Ⅵ. 마무리</th><td>성찰·자기평가 → <b>활동 기록</b> 인쇄 / Word 제출</td></tr></table>
@@ -903,7 +912,7 @@ function renderStep(s){const i=STEPS.indexOf(s);const d=st(s.id);const lock=!!d.
   let html=`<div class="crumb">${L.n}차시 · ${esc(L.title)} &nbsp;(${li+1}/${L.steps.length}) &nbsp;·&nbsp; ${esc(s.part||'')}</div>
    ${li===0?`<div class="hint info" style="margin:0 0 12px"><b>🎯 ${L.n}차시 학습 목표</b> — ${esc(L.goal)}</div>`:''}<div class="card"><h2>${s.title}</h2>
    <div class="tutor"><div class="avatar">T</div><div class="say">${s.intro()}</div></div></div>${preQ}`;
-  if(s.quizOnly){html+=s.quizzes.map((q,qi)=>(!q.teacherOnly||isTeacher())?quizHTML(s,q,qi):'').join('')+`<div class="card"><h3><span class="num">성찰</span>오답 정리</h3>${s.draft.map(f=>fieldHTML(s.id,f,false)).join('')}<p class="closing">${esc(s.closing)}</p><div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">다음으로 →</button></div></div>`;main.innerHTML=html;bindMain();return}
+  if(s.quizOnly){html+=quizSummaryHTML()+`<div class="card"><h3><span class="num">성찰</span>오답 정리</h3>${s.draft.map(f=>fieldHTML(s.id,f,false)).join('')}<p class="closing">${esc(s.closing)}</p><div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">다음으로 →</button></div></div>`;main.innerHTML=html;bindMain();return}
   html+=`<div class="card"><h3><span class="num">${s.simple?'작성':'초안'}</span>${s.simple?'나의 기록':'나의 생각 먼저 쓰기'}</h3>
    ${s.draft.map(f=>fieldHTML(s.id,f,lock&&!s.simple)).join('')}`;
   if(s.simple){html+=`${s.closing?`<p class="closing">${esc(s.closing)}</p>`:''}<div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">${i<STEPS.length-1?'완료하고 다음으로 →':'완료하고 활동 기록 보기 →'}</button></div></div>`;main.innerHTML=html;bindMain();return}
@@ -933,7 +942,7 @@ function quizHTML(s,q,qi){const key=qkey(qi);const d=st(s.id);const ans=d[key]||
     else{inp=`<input type="text" data-qi="${i}" data-qk="${key}" value="${esc(my)}" placeholder="답 쓰기" style="width:100%;border:1px solid #cfd4e2;border-radius:8px;padding:6px 10px">`;
       if(chk)res=`<div class="hint ok" style="margin:6px 0 0;padding:6px 10px">정답: ${nl(it.a)}</div>`}
     return `<tr><td style="width:36px;color:var(--muted)">${i+1}</td><td>${esc(it.q)}</td><td style="min-width:200px">${inp}${res}${chk&&it.n?`<div class="small">💡 ${esc(it.n)}</div>`:''}</td></tr>`}).join('');
-  const sc=quizScore(s.id,q,key);const src=q.src||'선생님 학습지의 유형 문제예요.';
+  const sc=quizScore(s.id,q,key);const src=q.src||'선생님 학습지의 유형 문제예요. 이 단계에서 배운 내용으로 풀어요.';
   return `<div class="card quiz" id="${cid}"><h3><span class="num">${q.tag||'유형'}</span>${esc(q.title)}</h3><p class="small">${esc(src)} ${q.pre?'':'먼저 스스로 풀고 “채점하기”를 누르세요.'} ${chk&&sc.n?`<b>선택형 ${sc.ok} / ${sc.n} 정답</b>`:''}</p>
    <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14.5px">${rows}</table></div>
    <p style="margin:12px 0 0"><button class="btn primary sm" onclick="st('${s.id}')['${key}Checked']=true;save();render();document.getElementById('${cid}').scrollIntoView({behavior:'smooth'})">채점하기 / 정답 보기</button> ${chk?`<button class="btn sm" onclick="st('${s.id}')['${key}Checked']=false;save();render()">정답 숨기기</button>`:''}</p></div>`}
