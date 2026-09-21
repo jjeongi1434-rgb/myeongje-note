@@ -1,6 +1,6 @@
 # 명제 탐구 노트
 
-**학생용 주소: https://hkhsm00-k81c.github.io/myeongje-note/**
+**학생용 주소: https://jjeongi1434-rgb.github.io/myeongje-note/**
 
 고등학교 수학 「집합과 명제 – 명제」 단원 학습용 웹앱입니다. 학생이 **직접 만든 문장**으로 단원 전체를 탐구하고, 활동 내용을 기록해 보고서로 출력합니다. 서버·AI API 없이 **`index.html` 파일 하나**로 동작하며 비용이 들지 않습니다.
 
