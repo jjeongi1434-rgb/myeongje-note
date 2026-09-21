@@ -34,7 +34,7 @@ a{color:var(--brand)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 56px)}
 .sidebar{background:var(--card);border-right:1px solid var(--line);padding:14px 10px;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto}
-.sidebar h3{margin:6px 8px 8px;font-size:12px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.sidebar h3{margin:6px 8px 6px;font-size:12px;letter-spacing:.02em;color:var(--muted);line-height:1.4}
 .navitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:9px;color:var(--ink);font-size:14px}
 .navitem:hover{background:#f3f4f8}
 .navitem.active{background:var(--brand-soft);color:var(--brand);font-weight:700}
@@ -198,8 +198,8 @@ const P=(id,k,alt)=>esc(val(id,k)||alt||'(아직 입력하지 않음)');
 
 const TB='교과서(공통수학2, 홍진곤 외) 명제 단원의 문제예요.';
 const STEPS=[
-{id:'s1',title:'명제와 조건 구분',short:'명제·조건',
- intro:()=>`<p>안녕하세요! 이 노트는 여러분이 <b>직접 만든 문장</b>으로 명제 단원 전체를 탐구하는 기록장이에요. 정답을 먼저 보여주지 않아요. 먼저 여러분의 생각(초안)을 쓰고, 그다음 판정 기준을 보며 스스로 고쳐 보는 순서로 진행돼요.</p>
+{id:'s1',part:'Ⅰ. chatgpt를 활용한 명제 이해하기',title:'문장 만들기 — 명제인가, 조건인가',short:'명제·조건',
+ intro:()=>`<p>Ⅰ부에서는 <b>내가 만든 문장 하나</b>를 가지고 명제 판별 챗봇과 함께 다섯 단계를 탐구해요. 챗봇은 정답을 먼저 주지 않고 내 생각을 먼저 물어요. 챗봇과 나눈 대화는 각 단계의 <b>💬 챗봇 기록란</b>에 요약해 두고, 이 노트의 판정 기준·힌트로 다시 점검해요. <a href="https://chatgpt.com/g/g-68fb807dbc588191aa02c8369009b801-myeongje-panbyeol-caesbos-v3" target="_blank" rel="noopener">▶ 명제 판별 챗봇 열기</a></p>
  <p>먼저 문장을 하나 만들어 보세요. 그리고 생각해 봅시다. <b>이 문장은 명제인가요?</b> 아니면 질문, 명령, 감탄, 혹은 모호하거나 불완전한 문장인가요? <b>‘조건’</b>일 수도 있어요. 왜 그렇게 생각했는지도 함께 적어 주세요.</p>
  <p class="ex">예: “2는 짝수이다”, “x+3=7”, “오늘 날씨 참 좋다!” 같은 문장을 떠올려 보세요. 문장 B, C도 만들어 보면 명제·조건·명제가 아닌 문장을 한 번씩 경험할 수 있어요.</p>`,
  draft:[
@@ -212,6 +212,8 @@ const STEPS=[
   {k:'c',label:'문장 C (선택)',type:'text'},
   {k:'c_type',label:'문장 C는?',type:'radio',opts:['명제','조건','명제 아님']},
   {k:'c_why',label:'이유',type:'textarea',rows:2},
+  {k:'bot',label:'💬 챗봇의 답변 간략히 기록하기',type:'textarea',rows:2,ph:'챗봇(명제 판별 챗봇)이 내 문장에 대해 한 말을 요약해서 적어요. 챗봇을 쓰지 않았다면 비워 두어도 돼요.'},
+  {k:'bot2',label:'💬 나의 답변에 대하여 챗봇이 한 내용 정리하기',type:'textarea',rows:2,ph:'내 판단·이유에 대해 챗봇이 지적한 강점·보완점을 내 말로 정리해요.'},
  ],
  reveal:()=>`<table><tr><th style="width:110px">판정</th><th>기준</th><th>예</th></tr>
  <tr><td><b>명제</b></td><td>참 또는 거짓을 <b>명확히</b> 판별할 수 있는 문장이나 식</td><td>“2는 짝수이다”(참), “7은 4의 배수이다”(거짓)</td></tr>
@@ -246,13 +248,15 @@ const STEPS=[
   {q:'서울에는 많은 사람이 산다.',a:'명제 아님'},{q:'√5는 유리수가 아니다.',a:'참인 명제'},{q:'평행사변형은 마름모이다.',a:'거짓인 명제',n:'반례: 네 변의 길이가 다른 평행사변형'},{q:'x = −1이면 x² = 1이다.',a:'참인 명제',n:'“p이면 q이다” 꼴도 참·거짓이 정해지므로 명제'}]}],
  closing:'좋아요. 이제 이 문장의 참·거짓을 판단하는 2단계로 넘어가 볼까요?'},
 
-{id:'s2',title:'명제의 참 / 거짓 판별',short:'참·거짓',
+{id:'s2',part:'Ⅰ. chatgpt를 활용한 명제 이해하기',title:'참 / 거짓 판별하기',short:'참·거짓',
  intro:()=>`<p>1단계에서 확정한 나의 명제 p는 다음과 같아요.</p><div class="quote"><b>p:</b> ${P('s1','p_final',getP())}</div>
  <p>이 명제가 <b>참인지 거짓인지</b> 판단해 봅시다. 그 이유나 근거(정의, 계산, 반례 등)를 먼저 써 보세요.</p>
  <p class="ex">참이라면 “왜 항상 성립하는지”를 정의·성질·계산으로, 거짓이라면 “성립하지 않는 구체적인 예(반례)” 하나를 보여 주면 돼요.</p>`,
  draft:[
   {k:'tf',label:'나의 판단',type:'radio',opts:TF,req:1},
   {k:'why',label:'근거 (정의 · 계산 · 반례)',type:'textarea',req:1,ph:'예: 3의 약수는 1과 3뿐이므로 소수이다. / 15÷4=3…3이므로 4의 배수가 아니다.'},
+  {k:'bot',label:'💬 챗봇의 답변 간략히 기록하기',type:'textarea',rows:2,ph:'챗봇(명제 판별 챗봇)이 내 문장에 대해 한 말을 요약해서 적어요. 챗봇을 쓰지 않았다면 비워 두어도 돼요.'},
+  {k:'bot2',label:'💬 나의 답변에 대하여 챗봇이 한 내용 정리하기',type:'textarea',rows:2,ph:'내 판단·이유에 대해 챗봇이 지적한 강점·보완점을 내 말로 정리해요.'},
  ],
  reveal:()=>`<table><tr><th style="width:90px">판단</th><th>필요한 근거</th></tr>
  <tr><td><b>참</b></td><td>정의·성질·연산을 바탕으로 “항상 성립함”을 보인다. (예: 소수의 정의, 배수의 정의, 부등식의 성질)</td></tr>
@@ -282,7 +286,7 @@ const STEPS=[
   {q:'모든 정사각형은 직사각형이다.',a:'참',n:'정사각형은 네 각이 모두 직각이므로 직사각형의 정의를 만족'},{q:'어떤 동물은 날 수 있다.',a:'참',n:'참새 하나면 충분'},{q:'모든 태양계 행성은 고리가 있다.',a:'거짓',n:'반례: 지구'},{q:'어떤 자연수는 음수이다.',a:'거짓'}]}],
  closing:'좋아요. 이번에는 이 명제의 부정문을 만들어 보고, 부정했을 때 참과 거짓이 어떻게 달라지는지 살펴볼까요?'},
 
-{id:'s3',title:'명제의 부정',short:'부정 ¬p',
+{id:'s3',part:'Ⅰ. chatgpt를 활용한 명제 이해하기',title:'부정문 만들고 참 / 거짓 판별하기',short:'부정 ¬p',
  intro:()=>`<div class="quote"><b>p:</b> ${esc(getP()||'(1단계에서 p를 확정해 주세요)')} &nbsp; <span class="small">(2단계 판단: ${esc(val('s2','tf2')||val('s2','tf')||'-')})</span></div>
  <p>명제의 <b>부정(¬p, 또는 ~p)</b>을 만들어 보고, 참과 거짓을 판별하고 이유를 기록해 주세요. 즉, 원래 문장의 참과 거짓을 뒤집은 문장을 써 보는 거예요.</p>
  <p class="ex">예: ‘2는 짝수이다’ → ‘2는 짝수가 아니다’ &nbsp;/&nbsp; ‘x≥3’ → ‘x&lt;3’</p>
@@ -291,6 +295,8 @@ const STEPS=[
   {k:'neg',label:'¬p (p의 부정)',type:'text',req:1,ph:'예: 3은 소수가 아니다'},
   {k:'tf',label:'¬p의 참·거짓',type:'radio',opts:TF,req:1},
   {k:'why',label:'이유',type:'textarea',req:1,ph:'p의 참·거짓과 비교해서 설명해 보세요.'},
+  {k:'bot',label:'💬 챗봇의 답변 간략히 기록하기',type:'textarea',rows:2,ph:'챗봇(명제 판별 챗봇)이 내 문장에 대해 한 말을 요약해서 적어요. 챗봇을 쓰지 않았다면 비워 두어도 돼요.'},
+  {k:'bot2',label:'💬 나의 답변에 대하여 챗봇이 한 내용 정리하기',type:'textarea',rows:2,ph:'내 판단·이유에 대해 챗봇이 지적한 강점·보완점을 내 말로 정리해요.'},
  ],
  reveal:()=>`<table><tr><th>원래 표현</th><th>부정</th></tr>
  <tr><td>A이다</td><td>A가 아니다</td></tr>
@@ -327,7 +333,7 @@ const STEPS=[
   {q:'√5는 유리수가 아니다.',a:'√5는 유리수이다. → 거짓'},{q:'명제 p의 부정 ¬p를 다시 부정하면? (기호로)',a:'¬(¬p) = p'}]}],
  closing:'이제 단순한 명제의 ‘부정’이 끝났어요. 다음 단계에서는 명제 앞에 ‘모든’과 ‘어떤’을 붙여 논리의 범위를 확장하고, “그리고/또는”이 들어간 문장의 부정까지 살펴볼까요?'},
 
-{id:'s4',title:'‘모든’과 ‘어떤’',short:'모든·어떤',
+{id:'s4',part:'Ⅰ. chatgpt를 활용한 명제 이해하기',title:'‘모든’ · ‘어떤’을 넣어 보기',short:'모든·어떤',
  intro:()=>`<p>이번에는 <b>조건</b> 앞에 <b>‘모든’</b>이나 <b>‘어떤’</b>을 붙여 볼 거예요. 이 단어들이 문장의 참과 거짓을 어떻게 바꾸는지 직접 탐구해 볼게요.</p>
  <p>① 먼저 변수가 들어간 조건을 하나 써 보세요. 변수의 범위(실수, 자연수 등)도 함께요. <span class="ex">예: ‘x² ≥ x’, ‘x+2=7’, ‘x는 짝수이다’</span></p>
  <p>② 그 조건 앞에 <b>‘모든’</b>을 붙인 문장을 쓰고 참·거짓과 근거를, ③ <b>‘어떤’</b>을 붙인 문장을 쓰고 참·거짓과 예시를 적어 보세요.</p>
@@ -342,6 +348,8 @@ const STEPS=[
   {k:'some_why',label:'근거 (참: 성립하는 예시 값 / 거짓: 왜 하나도 없나?)',type:'textarea',req:1},
   {k:'neg_all',label:'‘모든’ 문장의 부정',type:'text',req:1,ph:'예: 어떤 실수 x에 대하여 x² < x이다.'},
   {k:'neg_some',label:'‘어떤’ 문장의 부정',type:'text',req:1,ph:'예: 모든 실수 x에 대하여 x² < x이다.'},
+  {k:'bot',label:'💬 챗봇의 답변 간략히 기록하기',type:'textarea',rows:2,ph:'챗봇(명제 판별 챗봇)이 내 문장에 대해 한 말을 요약해서 적어요. 챗봇을 쓰지 않았다면 비워 두어도 돼요.'},
+  {k:'bot2',label:'💬 나의 답변에 대하여 챗봇이 한 내용 정리하기',type:'textarea',rows:2,ph:'내 판단·이유에 대해 챗봇이 지적한 강점·보완점을 내 말로 정리해요.'},
  ],
  reveal:()=>`<table><tr><th style="width:150px">명제</th><th>참이 되려면</th><th>거짓이 되려면</th></tr>
  <tr><td><b>모든 x에 대하여 p(x)</b><br><span class="small">(전칭 명제, ∀)</span></td><td>범위 안의 <b>모든</b> x에서 p(x)가 성립</td><td><b>반례 하나</b>만 있으면 됨</td></tr>
@@ -401,7 +409,7 @@ const STEPS=[
   {q:'(생각 넓히기) 진리집합을 이용하여 조건 “p 또는 q”의 부정을 구하면?',a:'“p 또는 q”의 진리집합은 P ∪ Q. 그 부정의 진리집합은 (P ∪ Q)ᶜ = Pᶜ ∩ Qᶜ 이므로 부정은 “¬p 그리고 ¬q”'}]}],
  closing:'좋아요. 이제 ‘모든/어떤’의 의미를 확실히 이해했어요. 다음 단계로, 조건이 참이 되는 값들을 집합으로 표현해 볼까요?'},
 
-{id:'s5',title:'진리집합 표현',short:'진리집합',
+{id:'s5',part:'Ⅰ. chatgpt를 활용한 명제 이해하기',title:'진리집합으로 표현하기',short:'진리집합',
  intro:()=>`<p>이제 <b>전체집합 U</b>와 <b>조건 p(x)</b>를 명확히 적고, 이 조건이 참이 되는 모든 값을 <b>집합 기호</b>로 나타내 보세요. 4단계에서 만든 조건을 그대로 써도 좋아요.</p>
  <p class="ex">예: U = 실수 전체, p(x): x² ≥ 4 → 진리집합 P = {x | x ≤ −2 또는 x ≥ 2}<br>
  ¬p: x² &lt; 4 → 진리집합 Pᶜ = {x | −2 &lt; x &lt; 2}</p>
@@ -412,6 +420,8 @@ const STEPS=[
   {k:'P',label:'p의 진리집합 P',type:'text',req:1,ph:'예: {x | x ≤ -2 또는 x ≥ 2}  /  {1, 2, 3, 6}'},
   {k:'Pc',label:'¬p의 진리집합',type:'text',req:1,ph:'예: {x | -2 < x < 2}'},
   {k:'why',label:'어떻게 구했나요? (풀이 과정)',type:'textarea',req:1},
+  {k:'bot',label:'💬 챗봇의 답변 간략히 기록하기',type:'textarea',rows:2,ph:'챗봇(명제 판별 챗봇)이 내 문장에 대해 한 말을 요약해서 적어요. 챗봇을 쓰지 않았다면 비워 두어도 돼요.'},
+  {k:'bot2',label:'💬 나의 답변에 대하여 챗봇이 한 내용 정리하기',type:'textarea',rows:2,ph:'내 판단·이유에 대해 챗봇이 지적한 강점·보완점을 내 말로 정리해요.'},
  ],
  reveal:()=>`<ul><li><b>진리집합</b>: 전체집합 U의 원소 중 조건 p(x)를 참이 되게 하는 모든 x의 집합. 보통 P로 나타내요.</li>
  <li><b>¬p의 진리집합 = Pᶜ</b> (P의 여집합). 그래서 P ∪ Pᶜ = U, P ∩ Pᶜ = ∅.</li>
@@ -451,7 +461,62 @@ const STEPS=[
   {q:'위 두 조건에 대하여 ¬p, ¬q의 진리집합',a:'Pᶜ = {1, 4, 5}, Qᶜ = {3, 5}'},{q:'U = {1, 2, 3, 4, 5}, p: x² − 8x + 7 = 0 → P',a:'P = {1}',n:'(x − 1)(x − 7) = 0인데 7 ∉ U'}]}],
  closing:'아주 좋아요! 명제 → 참/거짓 → 부정 → 모든/어떤 → 진리집합까지 왔어요. 이제 두 조건을 이어 붙인 명제 “p이면 q이다”를 탐구해 볼까요?'},
 
-{id:'s6',title:'명제 p → q (가정과 결론)',short:'p → q',
+{id:'sum',part:'Ⅱ. 선생님과 함께하는 명제 정리하기',title:'명제 정리표 · 개념 확인',short:'정리표',simple:true,
+ intro:()=>`<p>Ⅰ부에서 챗봇과 탐구한 내용을 <b>선생님과 함께 정리</b>하는 표예요. 먼저 <b>개념 확인</b> 빈칸을 채우고, 아래 정리표를 내 문장으로 깨끗하게 다시 써 보세요. <button class="btn sm" type="button" onclick="prefillSum()">↙ Ⅰ부 기록 가져오기</button> 를 누르면 1~5단계에 쓴 내용이 채워지고, 수업 중 고친 내용으로 수정하면 돼요.</p>
+ <p class="ex">정리표는 활동 기록(보고서)의 맨 앞에 그대로 들어가요.</p>`,
+ pre:[{tag:'개념',src:'교과서 79~83쪽의 개념과 개념 확인하기예요. 빈칸을 채우고 “채점하기”로 확인해요.',title:'개념 확인 — 명제와 조건 (빈칸 채우기)',items:[
+  {q:'참 또는 거짓을 명확하게 판별할 수 있는 문장이나 식을 (      )라고 한다.',a:'명제'},
+  {q:'변수를 포함하는 문장이나 식이 변수의 값에 따라 참, 거짓이 결정될 때, 이 문장이나 식을 (      )이라고 한다.',a:'조건'},
+  {q:'전체집합 U의 원소 중에서 어떤 조건을 참이 되게 하는 모든 원소의 집합을 그 조건의 (      )이라고 한다.',a:'진리집합'},
+  {q:'명제 p가 참이면 ~p는 (      )이고, ~(~p)는 (      )이다.',a:'거짓, p'},
+  {q:'조건 p의 진리집합이 P일 때, ~p의 진리집합은 (      )이다.',a:'Pᶜ (P의 여집합)'},
+  {q:'명제 “모든 x에 대하여 p이다.”는 P (   ) U이면 참이고, “어떤 x에 대하여 p이다.”는 P (   ) ∅이면 참이다.',a:'=, ≠'},
+  {q:'“모든 x에 대하여 p이다.”의 부정은 “(      ) x에 대하여 ~p이다.”, “어떤 x에 대하여 p이다.”의 부정은 “(      ) x에 대하여 ~p이다.”',a:'어떤, 모든'},
+  {q:'조건 “p이고 q”의 부정은 “(      )”, “p 또는 q”의 부정은 “(      )”이다.',a:'~p 또는 ~q, ~p이고 ~q'},
+  {q:'(교과서 개념 확인) 명제 “4 < 5”는 참이고, 그 부정 “4 ≥ 5”는 (참, 거짓)이다.',a:'거짓'},
+  {q:'(교과서 개념 확인) U가 자연수 전체일 때 조건 “x는 8과 12의 공약수이다”의 진리집합 P = {1, 2, (   )}',a:'4'},
+  {q:'(교과서 개념 확인) U = {1, 2, …, 10}일 때 “x는 홀수이다”의 진리집합은 {1, 3, 5, 7, 9}, 부정의 진리집합은 {2, 4, 6, (   ), (   )}',a:'8, 10'},
+  {q:'(교과서 개념 확인) U가 정수 전체일 때 명제 “어떤 x에 대하여 x² = 0이다.”의 진리집합 Q = {0} ≠ ∅ 이므로 (참, 거짓)',a:'참'},
+  {q:'(교과서 개념 확인) 명제 “어떤 실수 x에 대하여 x² > 1이다.”의 부정 “모든 실수 x에 대하여 x² ≤ 1이다.”는 (참, 거짓)',a:'거짓'}]}],
+ draft:[
+  {k:'h1',label:'▣ 명제가 되는 문장 작성 → 참/거짓 판정 → 부정문 작성 → 부정의 참/거짓 판정',type:'head'},
+  {k:'r1_s',label:'하나의 문장 (p)',type:'text',req:1},
+  {k:'r1_tf',label:'p의 참/거짓',type:'radio',opts:TF,req:1},
+  {k:'r1_neg',label:'p의 부정문',type:'text',req:1},
+  {k:'r1_ntf',label:'부정문의 참/거짓',type:'radio',opts:TF,req:1},
+  {k:'r2_s',label:'‘모든’을 넣은 문장',type:'text',req:1},
+  {k:'r2_tf',label:'참/거짓',type:'radio',opts:TF,req:1},
+  {k:'r2_neg',label:'부정문',type:'text',req:1},
+  {k:'r2_ntf',label:'부정문의 참/거짓',type:'radio',opts:TF,req:1},
+  {k:'r3_s',label:'‘어떤’을 넣은 문장',type:'text',req:1},
+  {k:'r3_tf',label:'참/거짓',type:'radio',opts:TF,req:1},
+  {k:'r3_neg',label:'부정문',type:'text',req:1},
+  {k:'r3_ntf',label:'부정문의 참/거짓',type:'radio',opts:TF,req:1},
+  {k:'h2',label:'▣ 진리집합 표현하기',type:'head'},
+  {k:'U',label:'전체집합 정하기 (U)',type:'text',req:1},
+  {k:'cond',label:'조건 p(x)',type:'text',req:1},
+  {k:'P',label:'p(x)의 진리집합',type:'text',req:1},
+  {k:'Pc',label:'~p(x)의 진리집합',type:'text',req:1},
+  {k:'h3',label:'▣ 나만의 판별 기준 (수업 후 최종 정리)',type:'head'},
+  {k:'crit1',label:'명제 / 조건 / 명제 아님을 판별하는 기준',type:'textarea',req:1,rows:2,copy:'s1.criteria'},
+  {k:'crit2',label:'참 / 거짓을 판별하는 기준',type:'textarea',req:1,rows:2,copy:'s2.criteria'},
+ ],
+ closing:'정리가 끝났어요. 다음은 학습지의 유형 문제로 연습해 볼까요?'},
+
+{id:'ex',part:'Ⅲ. 유형 문제 풀기',title:'유형 문제 ① ~ ⑤ (명제·부정·모든/어떤·진리집합)',short:'유형 문제',quizOnly:true,
+ intro:()=>`<p>선생님 학습지의 유형 문제예요. 정리표에서 정리한 기준으로 먼저 풀고, “채점하기”로 확인한 뒤 틀린 문항은 <b>왜 틀렸는지</b> 아래 성찰란에 적어 두세요.</p>`,
+ draft:[{k:'wrong',label:'틀린 문항과 그 이유 (다음에 같은 오류를 피하기 위한 나의 체크리스트)',type:'textarea',rows:3}],
+ closing:'좋아요. 이제 선생님과 함께 “p이면 q이다” 꼴의 명제를 개념정리해 볼까요?'},
+
+{id:'s6',part:'Ⅳ. 선생님과 함께하는 개념정리',title:'개념정리 ① 명제 p → q',short:'p → q',
+ pre:[{tag:'개념',src:'학습지 개념정리 1과 교과서 84~85쪽의 예예요. 선생님과 함께 빈칸을 채워요.',title:'개념정리 ① 명제 p → q (빈칸 채우기)',items:[
+  {q:'두 조건 p, q에 대하여 “p이면 q이다.”를 기호로 (      )와 같이 나타내고, p를 (      ), q를 (      )이라고 한다.',a:'p → q, 가정, 결론'},
+  {q:'명제 “n이 홀수이면 n²은 홀수이다.”에서 가정은 (      ), 결론은 (      )',a:'n은 홀수이다, n²은 홀수이다'},
+  {q:'명제 “x = 2이면 3x + 2 = 8이다.”에서 가정은 (      ), 결론은 (      )',a:'x = 2, 3x + 2 = 8'},
+  {q:'두 조건 p, q의 진리집합을 P, Q라 할 때, 명제 p → q가 참 ⟺ P (   ) Q. 거짓 ⟺ P (   ) Q',a:'⊂, ⊄'},
+  {q:'“x − 1 = 0이면 x² = 1이다.” → P = (      ), Q = (      ), P와 Q의 포함 관계 (      ), 참·거짓 (      )',a:'P = {1}, Q = {−1, 1}, P ⊂ Q, 참'},
+  {q:'“x² = 16이면 x − 4 = 0이다.” → P = (      ), Q = (      ), 포함 관계 (      ), 참·거짓 (      )',a:'P = {−4, 4}, Q = {4}, P ⊄ Q, 거짓'},
+  {q:'가정 p는 만족시키지만 결론 q는 만족시키지 않는 예를 (      )라고 한다. 위 명제의 (      )는 x = (   )',a:'반례, 반례, −4'}]}],
  intro:()=>`<p>두 조건 p, q로 <b>“p이면 q이다”</b>(기호 p → q) 꼴의 명제를 만들어 봅시다. 이때 p를 <b>가정</b>, q를 <b>결론</b>이라고 해요.</p>
  <p>① 전체집합 U와 두 조건 p, q를 정하고, ② “p이면 q이다” 문장을 쓴 뒤, ③ 참·거짓과 근거를 적어 보세요. ④ 그리고 두 조건의 진리집합 P, Q를 구해 <b>포함 관계</b>를 살펴보세요.</p>
  <p class="ex">예: U = 실수, p: x = 2, q: x² = 4 → “x = 2이면 x² = 4이다.”<br>5단계의 조건을 p로 가져와도 좋아요.</p>`,
@@ -503,8 +568,15 @@ const STEPS=[
   {q:'모든 카드를 한 번씩만 써서 ① 역·대우 모두 참 ② 역 참·대우 거짓 ③ 역 거짓·대우 참 ④ 역·대우 모두 거짓인 명제를 만들면?',a:'① ㉢ → ㉤ (2x − 3 = 13이면 (x − 8)² = 0) ② ㉠ → ㉦ (x는 5 이하의 자연수이면 x² − 5x + 4 = 0) ③ ㉡ → ㉥ ((x − 1)(x − 2) = 0이면 x는 6의 약수) ④ ㉣ → ㉧ (x는 10 미만의 소수이면 |x − 8| = 1)'}]}],
  closing:'좋아요. 이제 이 명제의 가정과 결론을 바꾸거나 부정해서 만든 “역”과 “대우”를 살펴볼까요?'},
 
-{id:'s7',title:'명제의 역과 대우',short:'역·대우',
- intro:()=>`<div class="quote"><b>p:</b> ${P('s6','p')} &nbsp; <b>q:</b> ${P('s6','q')}<br><b>p → q:</b> ${P('s6','imp')} &nbsp; <span class="small">(6단계 판단: ${esc(val('s6','tf')||'-')})</span></div>
+{id:'s7',part:'Ⅳ. 선생님과 함께하는 개념정리',title:'개념정리 ② 명제의 역과 대우',short:'역·대우',
+ pre:[{tag:'개념',src:'학습지 개념정리 2와 교과서 86~87쪽의 예예요. 선생님과 함께 빈칸을 채워요.',title:'개념정리 ② 역과 대우 (빈칸 채우기)',items:[
+  {q:'명제 p → q에서 가정과 결론을 서로 바꾼 (      )를 역, 가정과 결론을 각각 부정하여 서로 바꾼 (      )를 대우라고 한다.',a:'q → p, ~q → ~p'},
+  {q:'명제 “x < 2이면 x < 1이다.” → 역: (      ) / 대우: (      ) / 원명제·역·대우의 참·거짓',a:'역: x < 1이면 x < 2이다. (참) / 대우: x ≥ 1이면 x ≥ 2이다. (거짓, 반례 x = 1.5) / 원명제: 거짓'},
+  {q:'명제 “x² = y²이면 x = y이다.” → 역: (      ) / 대우: (      ) / 참·거짓',a:'역: x = y이면 x² = y²이다. (참) / 대우: x ≠ y이면 x² ≠ y²이다. (거짓, 반례 x = 1, y = −1) / 원명제: 거짓'},
+  {q:'명제 “a = 0 또는 b = 0이면 ab = 0이다.” → 역: (      ) / 대우: (      ) / 참·거짓',a:'역: ab = 0이면 a = 0 또는 b = 0이다. (참) / 대우: ab ≠ 0이면 a ≠ 0이고 b ≠ 0이다. (참) / 원명제: 참'},
+  {q:'명제 p → q가 참이면 P ⊂ Q이고, 이때 Qᶜ (   ) Pᶜ 이므로 대우 ~q → ~p도 (      )이다. 즉 명제와 그 (      )의 참·거짓은 항상 일치한다.',a:'⊂, 참, 대우'},
+  {q:'명제 “3의 배수이면 9의 배수이다.”의 역은 (      ), 참·거짓은 (      )',a:'9의 배수이면 3의 배수이다, 참'}]}],
+ intro:()=>`<div class="quote"><b>p:</b> ${P('s6','p')} &nbsp; <b>q:</b> ${P('s6','q')}<br><b>p → q:</b> ${P('s6','imp')} &nbsp; <span class="small">(개념정리 ①의 판단: ${esc(val('s6','tf')||'-')})</span></div>
  <p>명제 p → q에 대하여</p><ul><li><b>역</b>: q → p &nbsp;(가정과 결론을 바꿈)</li><li><b>대우</b>: ¬q → ¬p &nbsp;(가정과 결론을 바꾸고 각각 부정)</li></ul>
  <p>나의 명제의 역과 대우를 문장으로 쓰고, 각각 참·거짓을 근거와 함께 판단해 보세요. 그리고 <b>원래 명제의 참·거짓과 비교</b>해 보세요.</p>`,
  draft:[
@@ -525,7 +597,7 @@ const STEPS=[
  <p class="small">참고: “¬p → ¬q”는 “이”라고 부르며, 역의 대우예요. 그래서 역과 이는 참·거짓이 같아요. (교과서에 따라 다루지 않을 수 있어요.)</p>
  <p class="small">대우를 쓸 때는 부정을 정확히! “x = 2”의 부정은 “x ≠ 2”, “x > 1”의 부정은 “x ≤ 1”.</p>`,
  hints:()=>{const h=[];const o=val('s6','tf'),ct=val('s7','contra_tf'),c=val('s7','contra');
-   if(o&&ct&&o!==ct)h.push(`6단계에서 원래 명제를 “${o}”이라 했는데 대우는 “${ct}”이라고 했어요. 명제와 대우는 참·거짓이 항상 같아요. 둘 중 하나를 다시 확인해 보세요. (원래 명제 판단이 틀렸을 수도 있어요!)`);
+   if(o&&ct&&o!==ct)h.push(`개념정리 ①에서 원래 명제를 “${o}”이라 했는데 대우는 “${ct}”이라고 했어요. 명제와 대우는 참·거짓이 항상 같아요. 둘 중 하나를 다시 확인해 보세요. (원래 명제 판단이 틀렸을 수도 있어요!)`);
    if(c&&!/아니|않|≠|≤|≥|<|>|없/.test(c))h.push('대우에는 부정(“~가 아니다”, “≠”, 부등호 반전 등)이 두 번 들어가야 해요. 대우 문장을 다시 확인해 보세요.');
    if(val('s7','conv_tf')==='거짓'&&!hasNum(val('s7','conv_why')))h.push('역이 거짓이라면 반례 값을 구체적으로 적어 주세요.');
    const q=val('s6','q'),cv=val('s7','conv');
@@ -556,10 +628,24 @@ const STEPS=[
   {q:'두 실수 x, y에 대하여 다음 중 역이 참인 것은?',opts:['x² + y² = 0이면 x = 0 또는 y = 0이다','x > 0이고 y < 0이면 xy < 0이다','|x| = |y|이면 x = y이다','x² > y²이면 x > y이다'],a:'|x| = |y|이면 x = y이다',n:'역 “x = y이면 |x| = |y|이다”는 참. 나머지의 역은 반례가 있음'}]}],
  closing:'좋아요. 이제 p → q의 참·거짓을 “조건 사이의 관계”로 표현하는 충분조건·필요조건을 정리해 볼까요?'},
 
-{id:'s8',title:'충분조건과 필요조건',short:'충분·필요',
+{id:'s8',part:'Ⅳ. 선생님과 함께하는 개념정리',title:'개념정리 ③ 충분조건과 필요조건',short:'충분·필요',
+ pre:[{tag:'개념',src:'학습지 개념정리 3과 교과서 87~88쪽이에요. 선생님과 함께 빈칸을 채워요.',title:'개념정리 ③ 충분조건과 필요조건 (빈칸 채우기)',items:[
+  {q:'명제 p → q가 참일 때, 기호로 (      )라 쓰고, p는 q이기 위한 (      )조건, q는 p이기 위한 (      )조건이라고 한다.',a:'p ⇒ q, 충분, 필요'},
+  {q:'p → q와 q → p가 모두 참일 때, 기호로 (      )라 쓰고, p는 q이기 위한 (      )조건이라고 한다.',a:'p ⇔ q, 필요충분'},
+  {q:'두 조건 p, q의 진리집합을 P, Q라 할 때 — P ⊂ Q이면 (      )이므로 p는 q이기 위한 (      )조건',a:'p ⇒ q, 충분'},
+  {q:'Q ⊂ P이면 (      )이므로 p는 q이기 위한 (      )조건',a:'q ⇒ p, 필요'},
+  {q:'P = Q이면 (      )이므로 p는 q이기 위한 (      )조건',a:'p ⇔ q, 필요충분'},
+  {q:'x = 3은 x + 1 = 4이기 위한 (      )조건이다.',a:'필요충분'},
+  {q:'(x + 1)(x − 1) = 0은 x = 1이기 위한 (      )조건이다.',a:'필요'},
+  {q:'x가 양수인 것은 x + 3이 양수이기 위한 (      )조건이다.',a:'충분'},
+  {q:'x가 자연수인 것은 x가 정수이기 위한 (      )조건이다.',a:'충분'},
+  {q:'p: ab < 0, q: a > 0, b < 0 → p는 q이기 위한 (      )조건이지만 (      )조건은 아니다.',a:'필요, 충분'},
+  {q:'p: x는 6의 약수, q: x는 3의 약수 → p는 q이기 위한 (      )조건이지만 (      )조건은 아니다.',a:'필요, 충분'},
+  {q:'p: x = 10, q: x² = 100 → p는 q이기 위한 (      )조건이지만 (      )조건은 아니다.',a:'충분, 필요'},
+  {q:'(교과서) 두 명제 p → q와 q → r가 모두 참이면 p → r도 참이다. 이런 추론 방법을 (      )이라고 한다.',a:'삼단논법'}]}],
  intro:()=>`<div class="quote"><b>p:</b> ${P('s6','p')} &nbsp; <b>q:</b> ${P('s6','q')}<br><span class="small">p → q: ${esc(val('s6','tf')||'-')} &nbsp;/&nbsp; 역 q → p: ${esc(val('s7','conv_tf')||'-')}</span></div>
  <p>명제 p → q가 참일 때 기호로 <b>p ⇒ q</b>라 쓰고, 이때 <b>p는 q이기 위한 충분조건</b>, <b>q는 p이기 위한 필요조건</b>이라고 해요. p ⇒ q이고 q ⇒ p이면 <b>p ⇔ q</b>, 서로 <b>필요충분조건</b>이에요.</p>
- <p>6·7단계의 판단을 바탕으로, 나의 p는 q이기 위한 어떤 조건인지 판단하고 <b>진리집합의 포함 관계로</b> 설명해 보세요. 그리고 필요충분조건이 되는 두 조건 쌍을 하나 새로 만들어 보세요.</p>`,
+ <p>개념정리 ①·②에서의 판단을 바탕으로, 나의 p는 q이기 위한 어떤 조건인지 판단하고 <b>진리집합의 포함 관계로</b> 설명해 보세요. 그리고 필요충분조건이 되는 두 조건 쌍을 하나 새로 만들어 보세요.</p>`,
  draft:[
   {k:'rel',label:'p는 q이기 위한',type:'radio',opts:['충분조건 (필요조건은 아님)','필요조건 (충분조건은 아님)','필요충분조건','충분조건도 필요조건도 아님'],req:1},
   {k:'why',label:'근거 (P와 Q의 포함 관계로 설명)',type:'textarea',req:1,ph:'예: P = {2} ⊂ Q = {-2, 2}이므로 p ⇒ q. 하지만 Q ⊄ P이므로 q ⇒ p는 아님. 따라서 p는 충분조건.'},
@@ -575,7 +661,7 @@ const STEPS=[
  <div class="key">🔑 외우는 법: 화살표가 <b>출발</b>하는 쪽이 <b>충분</b>조건, <b>도착</b>하는 쪽이 <b>필요</b>조건. (p ⇒ q: p는 충분, q는 필요)<br>진리집합으로는 <b>작은 집합 쪽이 충분조건</b>, 큰 집합 쪽이 필요조건.</div>`,
  hints:()=>{const h=[];const o=val('s6','tf'),c=val('s7','conv_tf'),r=val('s8','rel');
    if(o&&c&&r){let exp='';if(o==='참'&&c==='거짓')exp='충분조건 (필요조건은 아님)';else if(o==='거짓'&&c==='참')exp='필요조건 (충분조건은 아님)';else if(o==='참'&&c==='참')exp='필요충분조건';else exp='충분조건도 필요조건도 아님';
-     if(exp!==r)h.push(`6단계에서 p → q를 “${o}”, 7단계에서 역 q → p를 “${c}”이라 판단했어요. 위 표에서 그 줄을 찾아 나의 답 “${r}”과 비교해 보세요. (앞 단계 판단이 틀렸을 수도 있으니 함께 확인!)`);}
+     if(exp!==r)h.push(`개념정리 ①에서 p → q를 “${o}”, ②에서 역 q → p를 “${c}”이라 판단했어요. 위 표에서 그 줄을 찾아 나의 답 “${r}”과 비교해 보세요. (앞 단계 판단이 틀렸을 수도 있으니 함께 확인!)`);}
    const ep=val('s8','ex_p'),eq=val('s8','ex_q');if(ep&&eq&&ep.trim()===eq.trim())h.push('p′와 q′가 똑같은 문장이에요. 표현은 다르지만 진리집합이 같은 두 조건을 만들어 보세요.');
    if(!/[=⊂]/.test(val('s8','why')))h.push('근거를 진리집합의 포함 관계(P ⊂ Q, P = Q 등)로 써 보세요.');
    return h},
@@ -604,7 +690,7 @@ const STEPS=[
   {q:'세 조건 p, q, r에 대하여 p → q, q → ¬r가 참일 때 항상 참인 것을 모두 고르면? ㄱ. p → ¬r  ㄴ. r → ¬q  ㄷ. ¬p → ¬q  ㄹ. ¬q → r',opts:null,a:'ㄱ (삼단논법: p → q, q → ¬r ⇒ p → ¬r), ㄴ (q → ¬r의 대우)'}]}],
  closing:'훌륭해요. 마지막으로, 참인 명제를 “왜 참인지” 논리적으로 보이는 증명에 도전해 볼까요?'},
 
-{id:'s9',title:'증명 (대우 · 귀류법)',short:'증명',
+{id:'s9',part:'Ⅴ. 교과서로 확장하기',title:'명제의 증명 (정의 · 대우 · 귀류법)',short:'증명',
  intro:()=>`<p><b>증명</b>은 정의·성질·이미 참으로 알려진 사실을 근거로 명제가 참임을 논리적으로 보이는 것이에요. 이 단계에서는 세 가지 방법 중 하나를 골라 직접 써 봅니다.</p>
  <ul><li><b>직접 증명</b>: 가정 p에서 출발해 결론 q를 이끌어 낸다.</li><li><b>대우를 이용한 증명</b>: 명제와 대우는 참·거짓이 같으므로, 대우 ¬q → ¬p를 증명한다. (결론 q의 부정에서 출발!)</li><li><b>귀류법</b>: 결론을 부정(¬q)하고 가정과 함께 논리를 전개하여 <b>모순</b>을 이끌어 낸다. 따라서 결론이 참이다.</li></ul>
  <p>증명은 <b>용어의 정의</b>에서 출발해요. 용어의 뜻을 명확하게 정한 문장을 <b>정의</b>, 참임이 증명된 명제를 <b>정리</b>라고 해요(예: 피타고라스 정리). 정리는 다른 명제를 증명하는 데 쓰여요.</p>
@@ -662,7 +748,7 @@ const STEPS=[
   {q:'“두 자연수 m, n에 대하여 mn이 짝수이면 m 또는 n이 짝수이다.”를 증명하면? (개요)',a:'대우: m, n이 모두 홀수이면 mn은 홀수이다. m = 2k − 1, n = 2l − 1이면 mn = 2(2kl − k − l + 1) − 1 → 홀수. 대우가 참이므로 원명제도 참.'}]}],
  closing:'좋아요. 증명의 마지막 주제로, 문자에 어떤 실수를 넣어도 항상 성립하는 부등식 — 절대부등식 — 을 증명해 볼까요?'},
 
-{id:'s10',title:'절대부등식',short:'절대부등식',
+{id:'s10',part:'Ⅴ. 교과서로 확장하기',title:'절대부등식',short:'절대부등식',
  intro:()=>`<p>부등식 x² − 1 &lt; 0은 −1 &lt; x &lt; 1일 때만 참이지만, 부등식 x² + 1 &gt; 0은 <b>어떤 실수를 넣어도 항상</b> 참이에요. 이렇게 문자에 그 문자가 가질 수 있는 어떤 실숫값을 대입해도 항상 성립하는 부등식을 <b>절대부등식</b>이라고 해요.</p>
  <p>① 아래 부등식이 절대부등식인지 판단하고, ② 증명할 절대부등식을 하나 고른 뒤 ③ 증명 방법과 증명 초안, ④ <b>등호가 성립하는 조건</b>까지 써 보세요. 증명은 9단계처럼 “무엇을 가정하고 무엇을 보이는지”를 분명히!</p>
  <p class="ex">자주 쓰는 실수의 성질: a² ≥ 0, &nbsp; a² + b² ≥ 0, &nbsp; a² + b² = 0 ⇔ a = b = 0, &nbsp; |a| ≥ a, &nbsp; a &gt; 0, b &gt; 0일 때 a &gt; b ⇔ a² &gt; b²</p>`,
@@ -727,7 +813,7 @@ const STEPS=[
   {q:'a > 0일 때 a + 1 > √(a² + 1) 증명의 빈칸: (a+1)² ( ) (√(a²+1))² 임을 보이면 된다. ( )² − ( )² = 2a … 따라서 ( ) > √(a²+1)',a:'>, a + 1, √(a² + 1), a + 1'}]}],
  closing:'아주 좋아요! 명제 → 참/거짓 → 부정 → 모든/어떤 → 진리집합 → p→q → 역·대우 → 충분·필요 → 증명 → 절대부등식까지, 교과서 명제 단원의 전체 흐름을 완성했어요. 정말 훌륭합니다 👏 마지막으로 활동을 돌아보며 정리해 볼까요?'},
 
-{id:'s11',title:'마무리 성찰',short:'성찰',simple:true,
+{id:'s11',part:'Ⅵ. 마무리',title:'마무리 성찰',short:'성찰',simple:true,
  intro:()=>`<p>명제 단원의 전체 흐름을 직접 만든 문장으로 완주했어요. 👏 마지막으로 활동을 돌아보며 기록을 마무리해 주세요. 이 내용은 활동 기록(보고서)의 마지막 부분에 들어갑니다.</p>`,
  draft:[
   {k:'learned',label:'이번 활동에서 가장 중요하게 배운 것 (2가지 이상)',type:'textarea',req:1,rows:3},
@@ -738,7 +824,13 @@ const STEPS=[
  closing:'수고했어요! 상단의 “활동 기록” 버튼을 눌러 보고서를 확인하고 인쇄하거나 파일로 내려받으세요.'},
 ];
 
-STEPS.forEach(s=>{s.quizzes=[s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
+const EXQ=[];STEPS.forEach(s=>{if(['s1','s2','s3','s4','s5'].includes(s.id)&&s.quiz){EXQ.push(s.quiz);s.quiz=null}});
+STEPS.forEach(s=>{s.draft=s.draft||[];s.revise=s.revise||[];s.quizzes=s.id==='ex'?EXQ:[...(s.pre||[]).map(q=>({...q,pre:true})),s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
+function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:getP(),r1_tf:g('s2','tf2')||g('s2','tf'),r1_neg:g('s3','neg2')||g('s3','neg'),r1_ntf:g('s3','tf2')||g('s3','tf'),
+  r2_s:g('s4','all_s'),r2_tf:g('s4','all_tf'),r2_neg:g('s4','neg_all'),r2_ntf:g('s4','all_tf')==='참'?'거짓':g('s4','all_tf')==='거짓'?'참':'',
+  r3_s:g('s4','some_s'),r3_tf:g('s4','some_tf'),r3_neg:g('s4','neg_some'),r3_ntf:g('s4','some_tf')==='참'?'거짓':g('s4','some_tf')==='거짓'?'참':'',
+  U:g('s5','U'),cond:g('s5','cond'),P:g('s5','P'),Pc:g('s5','Pc'),crit1:g('s1','criteria'),crit2:g('s2','criteria')};
+  let n=0;for(const k in m){if(!String(d[k]||'').trim()&&m[k]){d[k]=m[k];n++}}save();render();alert(n?`${n}개 항목을 Ⅰ부 기록에서 가져왔어요. 수업 중 고친 내용으로 수정해 주세요.`:'가져올 새 내용이 없어요. (이미 채워져 있거나 Ⅰ부 기록이 비어 있어요)')}
 /* 교사 모드: 교과서 문제는 교사 모드에서만 표시 */
 const TEACHER_CODE='명제교사';
 const TKEY='myeongje-teacher';
@@ -759,8 +851,8 @@ function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명
 const main=$('#main');
 function go(view,id){S.view=view;if(id)S.cur=id;save();render();window.scrollTo({top:0})}
 function stepStatus(s){const d=st(s.id);if(d.done)return'done';if(d.submitted||s.draft.some(f=>d[f.k]))return'started';return''}
-function renderSidebar(){const el=$('#sidebar');el.innerHTML=`<h3>학습 단계</h3>`+STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;
-  return `<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
+function renderSidebar(){const el=$('#sidebar');let last='';el.innerHTML=STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;const h=s.part!==last?`<h3 style="${last?'margin-top:12px':''}">${esc(s.part)}</h3>`:'';last=s.part;
+  return h+`<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
   `<h3 style="margin-top:14px">기록</h3><button class="navitem ${S.view==='report'?'active':''}" onclick="go('report')"><span class="dot">📄</span><span class="t">활동 기록 · 출력</span></button>
    <button class="navitem ${S.view==='teacher'?'active':''}" onclick="go('teacher')"><span class="dot">👩‍🏫</span><span class="t">교사용 취합</span></button>`}
 function renderWho(){const s=S.student;const done=STEPS.filter(x=>st(x.id).done).length;$('#who').textContent=(s.name?`${s.cls?s.cls+' ':''}${s.sid?s.sid+' ':''}${s.name}`:'이름을 입력해 주세요')+` · ${done}/${STEPS.length}단계 완료`+(isTeacher()?' · 👩‍🏫 교사 모드':'')}
@@ -772,15 +864,20 @@ function render(){renderSidebar();renderWho();
 
 function renderHome(){const s=S.student;
   main.innerHTML=`<div class="card"><div class="crumb">고등학교 수학 · 집합과 명제</div><h2>명제 탐구 노트</h2>
-  <p>이 노트에서는 <b>여러분이 직접 만든 문장</b>으로 명제 단원 전체를 탐구합니다. 각 단계는 <b>① 초안 쓰기 → ② 판정 기준·자동 힌트 확인 → ③ 스스로 고치기 → ④ 연습·유형 문제</b> 순서로 진행돼요. 정답을 먼저 보여 주지 않으니, 틀려도 괜찮으니 먼저 생각을 적어 보세요.</p>
-  <p class="small">흐름: <b>1~5단계</b> 나만의 문장으로 탐구(명제·조건 → 참/거짓 → 부정 → 모든/어떤 → 진리집합) → 활동 기록에 <b>정리표</b> 자동 완성 → <b>6~8단계</b> p → q, 역·대우, 충분·필요조건 → <b>9~10단계</b> 증명(대우·귀류법)과 절대부등식 → <b>11단계</b> 성찰. 각 단계 끝의 <b>유형 문제</b>는 선생님 학습지, <b>교과서 문제</b>는 교과서(공통수학2) 명제 단원의 문제예요.</p>
+  <p>이 노트는 <b>내가 만든 문장</b>으로 명제 단원을 탐구하고 기록하는 활동지예요. 정답을 먼저 보여 주지 않으니, 틀려도 괜찮으니 먼저 생각을 적어 보세요.</p>
+  <table class="reveal" style="font-size:14px"><tr><th style="width:34%">Ⅰ. chatgpt를 활용한 명제 이해하기</th><td>내 문장 하나로 <b>명제 판별 챗봇</b>과 5단계 탐구 (명제/조건 → 참·거짓 → 부정 → 모든/어떤 → 진리집합). 챗봇의 답변을 기록하고 나만의 판별 기준을 써요. <a href="https://chatgpt.com/g/g-68fb807dbc588191aa02c8369009b801-myeongje-panbyeol-caesbos-v3" target="_blank" rel="noopener">▶ 챗봇 열기</a></td></tr>
+  <tr><th>Ⅱ. 선생님과 함께하는 명제 정리하기</th><td>개념 확인 빈칸 + <b>정리표</b>(문장·참거짓·부정문·진리집합)를 깨끗하게 정리</td></tr>
+  <tr><th>Ⅲ. 유형 문제 풀기</th><td>학습지 유형 문제 ①~⑤ 채점과 오답 정리</td></tr>
+  <tr><th>Ⅳ. 선생님과 함께하는 개념정리</th><td>개념정리 ① p → q ② 역과 대우 ③ 충분·필요조건 — 빈칸 채우기 → 내 명제로 탐구 → 문제</td></tr>
+  <tr><th>Ⅴ. 교과서로 확장하기</th><td>정의·정리와 증명(대우·귀류법), 절대부등식</td></tr>
+  <tr><th>Ⅵ. 마무리</th><td>성찰·자기평가 → <b>활동 기록</b> 인쇄 / Word 제출</td></tr></table>
   <div class="hint info">✍️ 입력한 내용은 이 브라우저에 자동 저장돼요. 다른 기기에서 이어서 하려면 상단의 <b>저장</b>으로 파일을 내려받은 뒤 <b>불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div></div>
   <div class="card"><h3>학생 정보</h3><div class="grid2">
    <label class="field"><span class="lbl">학교·학급 <span class="small">(예: 1학년 3반)</span></span><input type="text" data-s="cls" value="${esc(s.cls)}"></label>
    <label class="field"><span class="lbl">학번</span><input type="text" data-s="sid" value="${esc(s.sid)}"></label>
    <label class="field"><span class="lbl">이름 <span class="req">*</span></span><input type="text" data-s="name" value="${esc(s.name)}"></label>
    <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label></div></div>
-  <div class="card"><h3>학습 단계</h3><div class="home-steps">${STEPS.map((x,i)=>{const ss=stepStatus(x);return `<button onclick="go('step','${x.id}')"><span class="n">${i+1}단계 ${ss==='done'?'<span class="pill ok">완료</span>':ss==='started'?'<span class="pill todo">진행 중</span>':''}</span><span class="t">${x.title}</span></button>`}).join('')}</div>
+  <div class="card"><h3>학습 단계</h3><div class="home-steps">${STEPS.map((x,i)=>{const ss=stepStatus(x);return `<button onclick="go('step','${x.id}')"><span class="n">${esc((x.part||'').split('.')[0])}-${i+1} ${ss==='done'?'<span class="pill ok">완료</span>':ss==='started'?'<span class="pill todo">진행 중</span>':''}</span><span class="t">${x.title}</span></button>`}).join('')}</div>
   <p style="margin-top:14px"><button class="btn primary" onclick="go('step','${(STEPS.find(x=>!st(x.id).done)||STEPS[0]).id}')">▶ 이어서 시작하기</button> <button class="btn" onclick="resetAll()">처음부터 다시</button></p></div>
   <div class="card exbank"><h3>💡 문장이 떠오르지 않을 때 — 소재 은행</h3><p class="small">아래는 “소재”일 뿐이에요. 문장은 반드시 자신의 말로 새로 만들어 보세요.</p>
   <details><summary>수와 연산</summary><ul><li>약수·배수·소수: “__은 소수이다”, “__은 __의 배수이다”</li><li>짝수·홀수: “__의 제곱은 짝수이다”</li><li>유리수·무리수: “√__은 무리수이다”</li></ul></details>
@@ -790,6 +887,7 @@ function renderHome(){const s=S.student;
 
 function fieldHTML(sid,f,lock){const d=st(sid);const v=d[f.k]??'';const ro=lock?'readonly':'';const req=f.req?'<span class="req">*</span>':'';
   let inner='';
+  if(f.type==='head')return `<h3 style="margin:18px 0 8px;font-size:15px;color:var(--brand)">${esc(f.label)}</h3>`;
   if(f.type==='text')inner=`<input type="text" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${ro}>`;
   else if(f.type==='textarea')inner=`<textarea data-k="${f.k}" rows="${f.rows||3}" placeholder="${esc(f.ph||'')}" ${ro}>${esc(v)}</textarea>`;
   else if(f.type==='radio')inner=`<div class="radios" data-k="${f.k}">${f.opts.map(o=>`<label class="${v===o?'on':''} ${lock?'dis':''}"><input type="radio" name="${sid}_${f.k}" value="${esc(o)}" ${v===o?'checked':''} ${lock?'disabled':''}>${esc(o)}</label>`).join('')}</div>`;
@@ -799,11 +897,13 @@ function fieldHTML(sid,f,lock){const d=st(sid);const v=d[f.k]??'';const ro=lock?
   return `<label class="field"><span class="lbl">${esc(f.label)}${req}${copy}</span>${inner}${f.help?`<small class="help">${esc(f.help)}</small>`:''}</label>`}
 
 function renderStep(s){const i=STEPS.indexOf(s);const d=st(s.id);const lock=!!d.submitted;
-  let html=`<div class="crumb">${i+1}단계 / ${STEPS.length}단계</div><div class="card"><h2>${s.title}</h2>
-   <div class="tutor"><div class="avatar">T</div><div class="say">${s.intro()}</div></div>
-   <h3><span class="num">${s.simple?'작성':'초안'}</span>${s.simple?'나의 기록':'나의 생각 먼저 쓰기'}</h3>
+  const preQ=s.quizzes.map((q,qi)=>q.pre?quizHTML(s,q,qi):'').join('');
+  let html=`<div class="crumb">${esc(s.part||'')} · ${i+1} / ${STEPS.length}</div><div class="card"><h2>${s.title}</h2>
+   <div class="tutor"><div class="avatar">T</div><div class="say">${s.intro()}</div></div></div>${preQ}`;
+  if(s.quizOnly){html+=s.quizzes.map((q,qi)=>(!q.teacherOnly||isTeacher())?quizHTML(s,q,qi):'').join('')+`<div class="card"><h3><span class="num">성찰</span>오답 정리</h3>${s.draft.map(f=>fieldHTML(s.id,f,false)).join('')}<p class="closing">${esc(s.closing)}</p><div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">다음으로 →</button></div></div>`;main.innerHTML=html;bindMain();return}
+  html+=`<div class="card"><h3><span class="num">${s.simple?'작성':'초안'}</span>${s.simple?'나의 기록':'나의 생각 먼저 쓰기'}</h3>
    ${s.draft.map(f=>fieldHTML(s.id,f,lock&&!s.simple)).join('')}`;
-  if(s.simple){html+=`<div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">완료하고 활동 기록 보기 →</button></div></div>`;main.innerHTML=html;bindMain();return}
+  if(s.simple){html+=`${s.closing?`<p class="closing">${esc(s.closing)}</p>`:''}<div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">${i<STEPS.length-1?'완료하고 다음으로 →':'완료하고 활동 기록 보기 →'}</button></div></div>`;main.innerHTML=html;bindMain();return}
   if(!lock){html+=`<div class="stepnav"><span class="small">필수(*) 항목을 모두 쓰면 판정 기준을 볼 수 있어요.</span><button class="btn primary" onclick="submitDraft('${s.id}')">초안 제출하고 판정 기준 보기 →</button></div></div>`}
   else{
     const hints=s.hints?s.hints():[];const checks=d.checks||[];
@@ -816,7 +916,7 @@ function renderStep(s){const i=STEPS.indexOf(s);const d=st(s.id);const lock=!!d.
      <p class="small">💡 다음에 같은 오류를 피하려면: 체크되지 않은 항목이 곧 나의 체크리스트예요.</p></div>
     <div class="card"><h3><span class="num">수정</span>고쳐 쓰기와 성찰</h3>${s.revise.map(f=>fieldHTML(s.id,f,false)).join('')}</div>
     <div class="card practice-wrap"><h3><span class="num">연습</span>비슷한 연습문제</h3>${s.practice.map((p,j)=>`<div class="practice" id="pr_${j}"><div class="q">${esc(p.q)}</div><button class="btn sm" onclick="document.getElementById('pr_${j}').classList.toggle('open')">풀이 보기 / 닫기</button><div class="a">${esc(p.a)}</div></div>`).join('<hr style="border:0;border-top:1px dashed var(--line);margin:12px 0">')}</div>
-    ${s.quizzes.map((q,qi)=>(!q.teacherOnly||isTeacher())?quizHTML(s,q,qi):'').join('')}
+    ${s.quizzes.map((q,qi)=>(!q.pre&&(!q.teacherOnly||isTeacher()))?quizHTML(s,q,qi):'').join('')}
     <div class="card"><p class="closing">${esc(s.closing)}</p><div class="stepnav">${i>0?`<button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전 단계</button>`:'<span></span>'}<button class="btn primary" onclick="finishStep('${s.id}')">네, 다음 단계로 넘어갈게요 →</button></div></div>`}
   main.innerHTML=html;bindMain()}
 
@@ -831,7 +931,7 @@ function quizHTML(s,q,qi){const key=qkey(qi);const d=st(s.id);const ans=d[key]||
       if(chk)res=`<div class="hint ok" style="margin:6px 0 0;padding:6px 10px">정답: ${nl(it.a)}</div>`}
     return `<tr><td style="width:36px;color:var(--muted)">${i+1}</td><td>${esc(it.q)}</td><td style="min-width:200px">${inp}${res}${chk&&it.n?`<div class="small">💡 ${esc(it.n)}</div>`:''}</td></tr>`}).join('');
   const sc=quizScore(s.id,q,key);const src=q.src||'선생님 학습지의 유형 문제예요.';
-  return `<div class="card quiz" id="${cid}"><h3><span class="num">${q.tag||'유형'}</span>${esc(q.title)}</h3><p class="small">${esc(src)} 먼저 스스로 풀고 “채점하기”를 누르세요. ${chk&&sc.n?`<b>선택형 ${sc.ok} / ${sc.n} 정답</b>`:''}</p>
+  return `<div class="card quiz" id="${cid}"><h3><span class="num">${q.tag||'유형'}</span>${esc(q.title)}</h3><p class="small">${esc(src)} ${q.pre?'':'먼저 스스로 풀고 “채점하기”를 누르세요.'} ${chk&&sc.n?`<b>선택형 ${sc.ok} / ${sc.n} 정답</b>`:''}</p>
    <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14.5px">${rows}</table></div>
    <p style="margin:12px 0 0"><button class="btn primary sm" onclick="st('${s.id}')['${key}Checked']=true;save();render();document.getElementById('${cid}').scrollIntoView({behavior:'smooth'})">채점하기 / 정답 보기</button> ${chk?`<button class="btn sm" onclick="st('${s.id}')['${key}Checked']=false;save();render()">정답 숨기기</button>`:''}</p></div>`}
 
@@ -841,7 +941,7 @@ function submitDraft(sid){const s=STEPS.find(x=>x.id===sid);const m=missing(sid,
   st(sid).submitted=true;st(sid).submittedAt=new Date().toISOString();save();render()}
 function unlock(sid){if(confirm('초안을 다시 쓰면 잠금이 풀려요. 이미 쓴 내용은 유지됩니다. 계속할까요?')){st(sid).submitted=false;save();render()}}
 function finishStep(sid){const s=STEPS.find(x=>x.id===sid);const i=STEPS.indexOf(s);
-  if(!s.simple){const m=missing(sid,s.revise);if(m.length){alert('“고쳐 쓰기와 성찰” 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}}
+  if(!s.simple&&!s.quizOnly){const m=missing(sid,s.revise);if(m.length){alert('“고쳐 쓰기와 성찰” 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}}
   else{const m=missing(sid,s.draft);if(m.length){alert('필수 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}}
   st(sid).done=true;st(sid).doneAt=new Date().toISOString();save();
   if(i<STEPS.length-1)go('step',STEPS[i+1].id);else go('report')}
@@ -874,18 +974,18 @@ const SYM=['≥','≤','≠','²','³','√','¬','~','→','⇒','⇔','∀','�
 /* ================= 보고서 ================= */
 function collect(state){const out=[];const g=(id,k)=>(state.steps[id]&&state.steps[id][k])||'';
   STEPS.forEach((s,i)=>{const d=state.steps[s.id]||{};const items=[];
-    const add=f=>{if(f.type==='ratings'){const r=d[f.k]||{};f.items.forEach((it,j)=>items.push({label:it,value:r[j]||''}))}else items.push({label:f.label,value:d[f.k]||''})};
-    if(!s.simple){items.push({h:'초안 (처음 생각)'});s.draft.forEach(add);items.push({h:'고쳐 쓰기와 성찰'});s.revise.forEach(add)}else s.draft.forEach(add);
+    const add=f=>{if(f.type==='head'){items.push({h:f.label.replace(/^▣ /,'')});return}if(f.type==='ratings'){const r=d[f.k]||{};f.items.forEach((it,j)=>items.push({label:it,value:r[j]||''}))}else items.push({label:f.label,value:d[f.k]||''})};
+    if(!s.simple&&!s.quizOnly){items.push({h:'초안 (처음 생각)'});s.draft.forEach(add);items.push({h:'고쳐 쓰기와 성찰'});s.revise.forEach(add)}else s.draft.forEach(add);
     const quizzes=s.quizzes.map((qz,qi)=>{const key=qkey(qi);const ans=d[key]||{};const qs=qz.items.map((it,j)=>({q:it.q,my:ans[j]||'',a:it.a,choice:!!(it.opts||qz.opts),ok:ans[j]===it.a}));const ch=qs.filter(x=>x.choice);return {title:qz.title,items:qs,n:ch.length,ok:ch.filter(x=>x.ok).length,answered:qs.filter(x=>x.my).length,checked:!!d[key+'Checked']}});
-    out.push({n:i+1,title:s.title,items,quizzes,checks:s.simple?null:s.checklist.map((c,j)=>({text:c,ok:!!(d.checks&&d.checks[j])})),done:!!d.done,started:!!(d.submitted||s.draft.some(f=>d[f.k]))})});
+    out.push({n:i+1,title:s.title,items,quizzes,checks:(s.simple||s.quizOnly)?null:s.checklist.map((c,j)=>({text:c,ok:!!(d.checks&&d.checks[j])})),done:!!d.done,started:!!(d.submitted||s.draft.some(f=>d[f.k]))})});
   return out}
 /* 정리표: 선생님과 함께하는 명제 정리하기 */
-function summaryRows(state){const g=(id,k)=>(state.steps[id]&&state.steps[id][k])||'';const s2=g('s2','tf2')||g('s2','tf'),s3=g('s3','tf2')||g('s3','tf');
+function summaryRows(state){const g=(id,k)=>(state.steps[id]&&state.steps[id][k])||'';const m=(k,alt)=>g('sum',k)||alt;const s2=g('s2','tf2')||g('s2','tf'),s3=g('s3','tf2')||g('s3','tf');
   return {sent:[
-    ['하나의 문장 (p)',getPof(state),s2,g('s3','neg2')||g('s3','neg'),s3],
-    ['‘모든’을 붙인 문장',g('s4','all_s'),g('s4','all_tf'),g('s4','neg_all'),g('s4','all_tf')==='참'?'거짓':g('s4','all_tf')==='거짓'?'참':''],
-    ['‘어떤’을 붙인 문장',g('s4','some_s'),g('s4','some_tf'),g('s4','neg_some'),g('s4','some_tf')==='참'?'거짓':g('s4','some_tf')==='거짓'?'참':'']],
-   sets:[['전체집합 U',g('s5','U')],['조건 p(x)',g('s5','cond')],['p(x)의 진리집합 P',g('s5','P')],['~p(x)의 진리집합 Pᶜ',g('s5','Pc')]],
+    ['하나의 문장 (p)',m('r1_s',getPof(state)),m('r1_tf',s2),m('r1_neg',g('s3','neg2')||g('s3','neg')),m('r1_ntf',s3)],
+    ['‘모든’을 붙인 문장',m('r2_s',g('s4','all_s')),m('r2_tf',g('s4','all_tf')),m('r2_neg',g('s4','neg_all')),m('r2_ntf',g('s4','all_tf')==='참'?'거짓':g('s4','all_tf')==='거짓'?'참':'')],
+    ['‘어떤’을 붙인 문장',m('r3_s',g('s4','some_s')),m('r3_tf',g('s4','some_tf')),m('r3_neg',g('s4','neg_some')),m('r3_ntf',g('s4','some_tf')==='참'?'거짓':g('s4','some_tf')==='거짓'?'참':'')]],
+   sets:[['전체집합 U',m('U',g('s5','U'))],['조건 p(x)',m('cond',g('s5','cond'))],['p(x)의 진리집합 P',m('P',g('s5','P'))],['~p(x)의 진리집합 Pᶜ',m('Pc',g('s5','Pc'))],['명제/조건 판별 기준',m('crit1',g('s1','criteria'))],['참/거짓 판별 기준',m('crit2',g('s2','criteria'))]],
    imp:[['조건 p (가정)',g('s6','p')],['조건 q (결론)',g('s6','q')],['p → q',g('s6','imp')+(g('s6','tf')?' ('+g('s6','tf')+')':'')],['역 q → p',g('s7','conv')+(g('s7','conv_tf')?' ('+g('s7','conv_tf')+')':'')],['대우 ¬q → ¬p',g('s7','contra')+(g('s7','contra_tf')?' ('+g('s7','contra_tf')+')':'')],['p는 q이기 위한',g('s8','rel')]]}}
 function summaryHTML(state){const r=summaryRows(state);const c=v=>v?nl(v):'<span class="empty">—</span>';
   return `<h2>정리표 — 나만의 명제 정리하기</h2><table><tr><th style="width:18%">문장 종류</th><th style="width:30%">문장</th><th style="width:10%">참/거짓</th><th style="width:30%">부정문</th><th>부정의 참/거짓</th></tr>
