@@ -100,6 +100,15 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
 .pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
 .pill.ok{background:var(--ok-soft);color:var(--ok)}
 .pill.todo{background:#eef0f5;color:var(--muted)}
+.lessons{width:100%;border-collapse:collapse;font-size:14px}
+.lessons th,.lessons td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+.lessons th{background:#f7f8fb}
+.lessons .ln{font-weight:700;color:var(--brand);text-align:center;font-size:16px}
+.lessons .lstep{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;margin:2px 0;font-size:13.5px}
+.lessons .lstep:hover{border-color:var(--brand)}
+.lessons .lstep.done{background:var(--ok-soft);border-color:#bfe3c4}
+.lessons .lstep.started{border-color:var(--brand)}
+.report h2.lesson{border-left:0;border-bottom:2px solid var(--brand);padding:0 0 4px;margin:30px 0 4px;font-size:18px;page-break-after:avoid}
 .home-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .home-steps button{text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px}
 .home-steps button:hover{border-color:var(--brand)}
@@ -800,6 +809,20 @@ const STEPS=[
  closing:'수고했어요! 상단의 “활동 기록” 버튼을 눌러 보고서를 확인하고 인쇄하거나 파일로 내려받으세요.'},
 ];
 
+const LESSONS=[
+ {n:1,title:'명제와 조건',goal:'명제와 조건의 뜻을 알고, 내가 만든 문장의 참·거짓을 근거를 들어 판별할 수 있다.',steps:['s1','s2']},
+ {n:2,title:'명제의 부정과 ‘모든’·‘어떤’',goal:'명제의 부정을 만들고, ‘모든’·‘어떤’을 포함한 명제의 참·거짓과 부정을 설명할 수 있다.',steps:['s3','s4']},
+ {n:3,title:'진리집합과 명제 정리',goal:'조건의 진리집합을 구하고, 1~2차시의 탐구를 정리표로 정리할 수 있다.',steps:['s5','sum']},
+ {n:4,title:'유형 문제로 다지기',goal:'명제·부정·모든/어떤·진리집합 유형 문제를 풀고 오답을 스스로 정리할 수 있다.',steps:['ex']},
+ {n:5,title:'명제 p → q',goal:'가정과 결론을 구분하고, 진리집합의 포함 관계로 p → q의 참·거짓을 판별하며 반례를 들 수 있다.',steps:['s6']},
+ {n:6,title:'명제의 역과 대우',goal:'명제의 역과 대우를 만들고, 명제와 그 대우의 참·거짓이 일치함을 설명할 수 있다.',steps:['s7']},
+ {n:7,title:'충분조건과 필요조건',goal:'충분조건·필요조건·필요충분조건을 진리집합의 포함 관계로 판단할 수 있다.',steps:['s8']},
+ {n:8,title:'명제의 증명',goal:'정의와 정리를 구분하고, 대우를 이용한 증명과 귀류법으로 명제를 증명할 수 있다.',steps:['s9']},
+ {n:9,title:'절대부등식',goal:'절대부등식의 뜻을 알고, 간단한 절대부등식을 증명하며 등호 성립 조건을 밝힐 수 있다.',steps:['s10']},
+ {n:10,title:'마무리와 활동 기록',goal:'단원 전체를 돌아보며 성찰하고, 활동 기록을 완성하여 제출한다.',steps:['s11']},
+];
+LESSONS.forEach(L=>L.steps.forEach(id=>{const st_=STEPS.find(x=>x.id===id);st_.lesson=L}));
+function lessonStatus(L){const d=L.steps.filter(id=>st(id).done).length;return d===L.steps.length?'done':d||L.steps.some(id=>stepStatus(STEPS.find(x=>x.id===id)))?'started':''}
 const EXQ=[];STEPS.forEach(s=>{if(['s1','s2','s3','s4','s5'].includes(s.id)&&s.quiz){EXQ.push(s.quiz);s.quiz=null}});
 STEPS.forEach(s=>{s.draft=s.draft||[];s.revise=s.revise||[];s.quizzes=s.id==='ex'?EXQ:[...(s.pre||[]).map(q=>({...q,pre:true})),s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
 function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:getP(),r1_tf:g('s2','tf2')||g('s2','tf'),r1_neg:g('s3','neg2')||g('s3','neg'),r1_ntf:g('s3','tf2')||g('s3','tf'),
@@ -827,7 +850,7 @@ function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명
 const main=$('#main');
 function go(view,id){S.view=view;if(id)S.cur=id;save();render();window.scrollTo({top:0})}
 function stepStatus(s){const d=st(s.id);if(d.done)return'done';if(d.submitted||s.draft.some(f=>d[f.k]))return'started';return''}
-function renderSidebar(){const el=$('#sidebar');let last='';el.innerHTML=STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;const h=s.part!==last?`<h3 style="${last?'margin-top:12px':''}">${esc(s.part)}</h3>`:'';last=s.part;
+function renderSidebar(){const el=$('#sidebar');let last=null;el.innerHTML=STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;const L=s.lesson;const h=L!==last?`<h3 style="${last?'margin-top:12px':''}">${L.n}차시 · ${esc(L.title)}</h3>`:'';last=L;
   return h+`<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
   `<h3 style="margin-top:14px">기록</h3><button class="navitem ${S.view==='report'?'active':''}" onclick="go('report')"><span class="dot">📄</span><span class="t">활동 기록 · 출력</span></button>
    <button class="navitem ${S.view==='teacher'?'active':''}" onclick="go('teacher')"><span class="dot">👩‍🏫</span><span class="t">교사용 취합</span></button>`}
@@ -847,13 +870,15 @@ function renderHome(){const s=S.student;
   <tr><th>Ⅳ. 선생님과 함께하는 개념정리</th><td>개념정리 ① p → q ② 역과 대우 ③ 충분·필요조건 — 빈칸 채우기 → 내 명제로 탐구 → 문제</td></tr>
   <tr><th>Ⅴ. 교과서로 확장하기</th><td>정의·정리와 증명(대우·귀류법), 절대부등식</td></tr>
   <tr><th>Ⅵ. 마무리</th><td>성찰·자기평가 → <b>활동 기록</b> 인쇄 / Word 제출</td></tr></table>
+  <p class="small" style="margin-top:8px">수업은 아래 <b>10차시</b>로 진행돼요. 각 차시의 첫 화면에 학습 목표가 표시되고, 차시가 끝나면 “저장”으로 기록을 내려받아 두세요.</p>
   <div class="hint info">✍️ 입력한 내용은 이 브라우저에 자동 저장돼요. 다른 기기에서 이어서 하려면 상단의 <b>저장</b>으로 파일을 내려받은 뒤 <b>불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div></div>
   <div class="card"><h3>학생 정보</h3><div class="grid2">
    <label class="field"><span class="lbl">학교·학급 <span class="small">(예: 1학년 3반)</span></span><input type="text" data-s="cls" value="${esc(s.cls)}"></label>
    <label class="field"><span class="lbl">학번</span><input type="text" data-s="sid" value="${esc(s.sid)}"></label>
    <label class="field"><span class="lbl">이름 <span class="req">*</span></span><input type="text" data-s="name" value="${esc(s.name)}"></label>
    <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label></div></div>
-  <div class="card"><h3>학습 단계</h3><div class="home-steps">${STEPS.map((x,i)=>{const ss=stepStatus(x);return `<button onclick="go('step','${x.id}')"><span class="n">${esc((x.part||'').split('.')[0])}-${i+1} ${ss==='done'?'<span class="pill ok">완료</span>':ss==='started'?'<span class="pill todo">진행 중</span>':''}</span><span class="t">${x.title}</span></button>`}).join('')}</div>
+  <div class="card"><h3>차시별 학습 계획</h3><div style="overflow:auto"><table class="lessons"><tr><th style="width:52px">차시</th><th>주제 · 학습 목표</th><th style="width:38%">활동 화면</th><th style="width:64px">상태</th></tr>
+  ${LESSONS.map(L=>{const ls=lessonStatus(L);return `<tr><td class="ln">${L.n}</td><td><b>${esc(L.title)}</b><div class="small">${esc(L.goal)}</div></td><td>${L.steps.map(id=>{const x=STEPS.find(z=>z.id===id);const i=STEPS.indexOf(x);const ss=stepStatus(x);return `<button class="lstep ${ss}" onclick="go('step','${id}')">${i+1}. ${esc(x.title)}</button>`}).join('')}</td><td>${ls==='done'?'<span class="pill ok">완료</span>':ls==='started'?'<span class="pill todo">진행 중</span>':''}</td></tr>`}).join('')}</table></div>
   <p style="margin-top:14px"><button class="btn primary" onclick="go('step','${(STEPS.find(x=>!st(x.id).done)||STEPS[0]).id}')">▶ 이어서 시작하기</button> <button class="btn" onclick="resetAll()">처음부터 다시</button></p></div>
   <div class="card exbank"><h3>💡 문장이 떠오르지 않을 때 — 소재 은행</h3><p class="small">아래는 “소재”일 뿐이에요. 문장은 반드시 자신의 말로 새로 만들어 보세요.</p>
   <details><summary>수와 연산</summary><ul><li>약수·배수·소수: “__은 소수이다”, “__은 __의 배수이다”</li><li>짝수·홀수: “__의 제곱은 짝수이다”</li><li>유리수·무리수: “√__은 무리수이다”</li></ul></details>
@@ -874,7 +899,9 @@ function fieldHTML(sid,f,lock){const d=st(sid);const v=d[f.k]??'';const ro=lock?
 
 function renderStep(s){const i=STEPS.indexOf(s);const d=st(s.id);const lock=!!d.submitted;
   const preQ=s.quizzes.map((q,qi)=>q.pre?quizHTML(s,q,qi):'').join('');
-  let html=`<div class="crumb">${esc(s.part||'')} · ${i+1} / ${STEPS.length}</div><div class="card"><h2>${s.title}</h2>
+  const L=s.lesson;const li=L.steps.indexOf(s.id);
+  let html=`<div class="crumb">${L.n}차시 · ${esc(L.title)} &nbsp;(${li+1}/${L.steps.length}) &nbsp;·&nbsp; ${esc(s.part||'')}</div>
+   ${li===0?`<div class="hint info" style="margin:0 0 12px"><b>🎯 ${L.n}차시 학습 목표</b> — ${esc(L.goal)}</div>`:''}<div class="card"><h2>${s.title}</h2>
    <div class="tutor"><div class="avatar">T</div><div class="say">${s.intro()}</div></div></div>${preQ}`;
   if(s.quizOnly){html+=s.quizzes.map((q,qi)=>(!q.teacherOnly||isTeacher())?quizHTML(s,q,qi):'').join('')+`<div class="card"><h3><span class="num">성찰</span>오답 정리</h3>${s.draft.map(f=>fieldHTML(s.id,f,false)).join('')}<p class="closing">${esc(s.closing)}</p><div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">다음으로 →</button></div></div>`;main.innerHTML=html;bindMain();return}
   html+=`<div class="card"><h3><span class="num">${s.simple?'작성':'초안'}</span>${s.simple?'나의 기록':'나의 생각 먼저 쓰기'}</h3>
@@ -953,7 +980,7 @@ function collect(state){const out=[];const g=(id,k)=>(state.steps[id]&&state.ste
     const add=f=>{if(f.type==='head'){items.push({h:f.label.replace(/^▣ /,'')});return}if(f.type==='ratings'){const r=d[f.k]||{};f.items.forEach((it,j)=>items.push({label:it,value:r[j]||''}))}else items.push({label:f.label,value:d[f.k]||''})};
     if(!s.simple&&!s.quizOnly){items.push({h:'초안 (처음 생각)'});s.draft.forEach(add);items.push({h:'고쳐 쓰기와 성찰'});s.revise.forEach(add)}else s.draft.forEach(add);
     const quizzes=s.quizzes.map((qz,qi)=>{const key=qkey(qi);const ans=d[key]||{};const qs=qz.items.map((it,j)=>({q:it.q,my:ans[j]||'',a:it.a,choice:!!(it.opts||qz.opts),ok:ans[j]===it.a}));const ch=qs.filter(x=>x.choice);return {title:qz.title,items:qs,n:ch.length,ok:ch.filter(x=>x.ok).length,answered:qs.filter(x=>x.my).length,checked:!!d[key+'Checked']}});
-    out.push({n:i+1,title:s.title,items,quizzes,checks:(s.simple||s.quizOnly)?null:s.checklist.map((c,j)=>({text:c,ok:!!(d.checks&&d.checks[j])})),done:!!d.done,started:!!(d.submitted||s.draft.some(f=>d[f.k]))})});
+    out.push({n:i+1,title:s.title,lesson:s.lesson,items,quizzes,checks:(s.simple||s.quizOnly)?null:s.checklist.map((c,j)=>({text:c,ok:!!(d.checks&&d.checks[j])})),done:!!d.done,started:!!(d.submitted||s.draft.some(f=>d[f.k]))})});
   return out}
 /* 정리표: 선생님과 함께하는 명제 정리하기 */
 function summaryRows(state){const g=(id,k)=>(state.steps[id]&&state.steps[id][k])||'';const m=(k,alt)=>g('sum',k)||alt;const s2=g('s2','tf2')||g('s2','tf'),s3=g('s3','tf2')||g('s3','tf');
@@ -973,7 +1000,7 @@ function reportHTML(state){const s=state.student;const secs=collect(state);const
   <div class="meta"><div><b>학급</b>${esc(s.cls)||'&nbsp;'}</div><div><b>학번</b>${esc(s.sid)||'&nbsp;'}</div><div><b>이름</b>${esc(s.name)||'&nbsp;'}</div><div><b>날짜</b>${esc(s.date)||'&nbsp;'}</div></div>
   <p style="font-size:14px">완료한 단계: <b>${done} / ${STEPS.length}</b> &nbsp;·&nbsp; 나의 명제 p: <b>${esc(getPof(state))||'-'}</b> &nbsp;·&nbsp; p → q: <b>${esc((state.steps.s6||{}).imp||'')||'-'}</b></p>
   ${summaryHTML(state)}
-  ${secs.map(sec=>`<h2>${sec.n}단계. ${esc(sec.title)} ${sec.done?'<span class="pill ok">완료</span>':sec.started?'<span class="pill todo">진행 중</span>':'<span class="pill todo">미작성</span>'}</h2>
+  ${secs.map((sec,si)=>`${(si===0||secs[si-1].lesson!==sec.lesson)?`<h2 class="lesson">${sec.lesson.n}차시 ${esc(sec.lesson.title)}</h2>`:''}<h2>${sec.n}단계. ${esc(sec.title)} ${sec.done?'<span class="pill ok">완료</span>':sec.started?'<span class="pill todo">진행 중</span>':'<span class="pill todo">미작성</span>'}</h2>
    <table>${sec.items.map(it=>it.h?`<tr><th colspan="2" style="width:auto;background:#e9ecf5">${esc(it.h)}</th></tr>`:`<tr><th>${esc(it.label)}</th><td>${it.value?nl(it.value):'<span class="empty">—</span>'}</td></tr>`).join('')}</table>
    ${sec.checks?`<div class="checks">자기 점검: ${sec.checks.map(c=>`<span>${c.ok?'☑':'☐'} ${esc(c.text)}</span>`).join('')}</div>`:''}
    ${sec.quizzes.filter(z=>z.answered).map(z=>`<details class="qrep" ${z.checked?'open':''}><summary style="font-size:13.5px;cursor:pointer;margin-top:6px">${esc(z.title)} — ${z.answered}/${z.items.length} 문항 풀이${z.n?`, 선택형 ${z.ok}/${z.n} 정답`:''}</summary>
@@ -991,7 +1018,7 @@ function saveJSON(){download(new Blob([JSON.stringify(S,null,2)],{type:'applicat
 function loadJSONPrompt(){$('#fileIn').value='';$('#fileIn').click()}
 $('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);if(!j.steps||!j.student)throw 0;if(confirm(`"${j.student.name||'이름 없음'}"의 기록을 불러올까요? 현재 브라우저의 기록은 덮어써져요.`)){S=j;save();go('home')}}catch(err){alert('올바른 저장 파일이 아니에요.')}})};
 function exportText(state){const secs=collect(state);const s=state.student;let t=`명제 탐구 활동 기록\n학급: ${s.cls}  학번: ${s.sid}  이름: ${s.name}  날짜: ${s.date}\n\n`;
-  secs.forEach(sec=>{t+=`■ ${sec.n}단계. ${sec.title}${sec.done?' [완료]':''}\n`;sec.items.forEach(it=>{t+=it.h?`\n  [${it.h}]\n`:`  - ${it.label}: ${it.value||'—'}\n`});if(sec.checks)t+=`  자기 점검: `+sec.checks.map(c=>`${c.ok?'☑':'☐'}${c.text}`).join(' / ')+'\n';t+='\n'});
+  secs.forEach((sec,si)=>{if(si===0||secs[si-1].lesson!==sec.lesson)t+=`\n【${sec.lesson.n}차시 ${sec.lesson.title}】\n`;t+=`■ ${sec.n}단계. ${sec.title}${sec.done?' [완료]':''}\n`;sec.items.forEach(it=>{t+=it.h?`\n  [${it.h}]\n`:`  - ${it.label}: ${it.value||'—'}\n`});if(sec.checks)t+=`  자기 점검: `+sec.checks.map(c=>`${c.ok?'☑':'☐'}${c.text}`).join(' / ')+'\n';t+='\n'});
   download(new Blob(['﻿'+t],{type:'text/plain;charset=utf-8'}),fname(state,'txt'))}
 
 async function exportDocx(state){
@@ -1011,7 +1038,8 @@ async function exportDocx(state){
     new TableRow({children:['문장 종류','문장','참/거짓','부정문','부정의 참/거짓'].map((t,i)=>cell(t,{w:[18,30,10,30,12][i],bold:1,shade:'F3F4F8'}))}),
     ...sm.sent.map(r=>new TableRow({children:r.map((t,i)=>cell(t,{w:[18,30,10,30,12][i],bold:i===0,shade:i===0?'F3F4F8':undefined}))}))]}),para(''),
     new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[...sm.sets,...sm.imp].map(r=>new TableRow({children:[cell(r[0],{w:30,bold:1,shade:'F3F4F8'}),cell(r[1],{w:70})]}))}));
-  secs.forEach(sec=>{kids.push(new Paragraph({heading:HeadingLevel.HEADING_2,spacing:{before:260,after:100},children:[new TextRun({text:`${sec.n}단계. ${sec.title}  ${sec.done?'[완료]':sec.started?'[진행 중]':'[미작성]'}`,font,bold:true,size:24,color:'3F51B5'})]}));
+  secs.forEach((sec,si)=>{if(si===0||secs[si-1].lesson!==sec.lesson)kids.push(new Paragraph({heading:HeadingLevel.HEADING_1,spacing:{before:360,after:80},children:[new TextRun({text:`${sec.lesson.n}차시 ${sec.lesson.title}`,font,bold:true,size:28,color:'1D2433'})]}));
+    kids.push(new Paragraph({heading:HeadingLevel.HEADING_2,spacing:{before:200,after:100},children:[new TextRun({text:`${sec.n}단계. ${sec.title}  ${sec.done?'[완료]':sec.started?'[진행 중]':'[미작성]'}`,font,bold:true,size:24,color:'3F51B5'})]}));
     const rows=sec.items.map(it=>it.h?new TableRow({children:[cell(it.h,{w:100,bold:1,shade:'E9ECF5',span:2})]}):new TableRow({children:[cell(it.label,{w:30,bold:1,shade:'F3F4F8'}),cell(it.value,{w:70})]}));
     kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
     if(sec.checks)kids.push(para('자기 점검: '+sec.checks.map(c=>`${c.ok?'☑':'☐'} ${c.text}`).join('   '),{size:17,color:'444444'}));
@@ -1032,8 +1060,8 @@ function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🔐 교�
   <div class="card teacher noprint"><h3>👩‍🏫 교사용 취합</h3><p class="small">학생들이 “저장”으로 내려받은 JSON 파일을 여러 개 한꺼번에 올리면 진행 상황을 표로 보고, 보고서를 한 번에 인쇄할 수 있어요. 파일은 이 브라우저 안에서만 처리되며 어디에도 전송되지 않아요.</p>
   <div class="drop" id="drop">여기에 JSON 파일들을 끌어다 놓거나 <button class="btn sm" onclick="$('#fileMulti').value='';$('#fileMulti').click()">파일 선택</button></div>
   ${T.length?`<p style="margin-top:12px"><b>${T.length}명</b> 불러옴 &nbsp; <button class="btn sm" onclick="printAll()">🖨 전체 보고서 인쇄</button> <button class="btn sm" onclick="exportCSV()">📊 CSV 내려받기</button> <button class="btn sm" onclick="T=[];render()">비우기</button></p>
-  <div style="overflow:auto"><table class="list"><tr><th>#</th><th>학급</th><th>학번</th><th>이름</th><th>완료</th><th>나의 명제 p</th><th>p → q</th><th>어려웠던 단계</th><th>질문</th><th></th></tr>
-  ${T.map((x,i)=>{const secs=collect(x);const d=secs.filter(z=>z.done).length;const s10=x.steps.s11||{};return `<tr><td>${i+1}</td><td>${esc(x.student.cls)}</td><td>${esc(x.student.sid)}</td><td>${esc(x.student.name)}</td><td>${d}/${STEPS.length}</td><td>${esc(getPof(x))}</td><td>${esc((x.steps.s6||{}).imp||'')}</td><td>${esc(s10.hard||'')}</td><td>${esc(s10.question||'')}</td><td><button class="btn sm" onclick="showOne(${i})">보고서</button></td></tr>`}).join('')}</table></div>`:''}
+  <div style="overflow:auto"><table class="list"><tr><th>#</th><th>학급</th><th>학번</th><th>이름</th><th>완료</th><th>차시</th><th>나의 명제 p</th><th>p → q</th><th>어려웠던 단계</th><th>질문</th><th></th></tr>
+  ${T.map((x,i)=>{const secs=collect(x);const d=secs.filter(z=>z.done).length;const s10=x.steps.s11||{};return `<tr><td>${i+1}</td><td>${esc(x.student.cls)}</td><td>${esc(x.student.sid)}</td><td>${esc(x.student.name)}</td><td>${d}/${STEPS.length}</td><td>${LESSONS.filter(L=>L.steps.every(id=>(x.steps[id]||{}).done)).length}/${LESSONS.length}</td><td>${esc(getPof(x))}</td><td>${esc((x.steps.s6||{}).imp||'')}</td><td>${esc(s10.hard||'')}</td><td>${esc(s10.question||'')}</td><td><button class="btn sm" onclick="showOne(${i})">보고서</button></td></tr>`}).join('')}</table></div>`:''}
   </div><div id="tview"></div>`;
   const dz=$('#drop');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over')}));
   dz.addEventListener('drop',e=>loadMany(e.dataTransfer.files))}
