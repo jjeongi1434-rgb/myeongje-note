@@ -815,25 +815,29 @@ const STEPS=[
  closing:'수고했어요! 상단의 “활동 기록” 버튼을 눌러 보고서를 확인하고 인쇄하거나 파일로 내려받으세요.'},
 ];
 
+/* 유형 문제를 각 단계 바로 뒤의 독립 화면으로 분리 */
+(function(){const out=[];STEPS.forEach(s=>{out.push(s);if(s.quiz){const q=s.quiz;s.quiz=null;out.push({id:'q'+s.id,src:s.id,part:s.part,title:({s1:'유형 ① 명제·조건 판별',s2:'유형 ② 참·거짓 판별',s3:'유형 ③ 명제의 부정',s4:'유형 ④ ‘모든’·‘어떤’',s5:'유형 ⑤ 진리집합',s6:'유형 ⑥ p → q의 참·거짓',s7:'유형 ⑦ 역과 대우',s8:'유형 ⑧ 충분·필요조건'})[s.id]||q.title,short:'유형',quizOnly:true,quizzes:[q],
+  intro:()=>`<p>앞 단계에서 배운 내용으로 <b>선생님 학습지의 유형 문제</b>를 풀어요. 먼저 스스로 다 푼 뒤 “채점하기”를 누르고, 틀린 문항은 앞 단계의 판정 기준을 다시 읽고 고쳐 보세요.</p>`,
+  draft:[],closing:'수고했어요. 다음 단계로 넘어갈까요?'})}});STEPS.length=0;STEPS.push(...out)})();
 const LESSONS=[
- {n:1,title:'명제와 조건',goal:'명제와 조건의 뜻을 알고, 내가 만든 문장의 참·거짓을 근거를 들어 판별할 수 있다.',steps:['s1','s2']},
- {n:2,title:'명제의 부정과 ‘모든’·‘어떤’',goal:'명제의 부정을 만들고, ‘모든’·‘어떤’을 포함한 명제의 참·거짓과 부정을 설명할 수 있다.',steps:['s3','s4']},
- {n:3,title:'진리집합과 명제 정리',goal:'조건의 진리집합을 구하고, 1~2차시의 탐구를 정리표로 정리할 수 있다.',steps:['s5','sum']},
+ {n:1,title:'명제와 조건',goal:'명제와 조건의 뜻을 알고, 내가 만든 문장의 참·거짓을 근거를 들어 판별할 수 있다.',steps:['s1','qs1','s2','qs2']},
+ {n:2,title:'명제의 부정과 ‘모든’·‘어떤’',goal:'명제의 부정을 만들고, ‘모든’·‘어떤’을 포함한 명제의 참·거짓과 부정을 설명할 수 있다.',steps:['s3','qs3','s4','qs4']},
+ {n:3,title:'진리집합과 명제 정리',goal:'조건의 진리집합을 구하고, 1~2차시의 탐구를 정리표로 정리할 수 있다.',steps:['s5','qs5','sum']},
  {n:4,title:'유형 문제 오답 정리',goal:'1~5단계에서 푼 유형 문제를 돌아보고, 틀린 이유를 유형별로 정리하여 나의 체크리스트를 만들 수 있다.',steps:['ex']},
- {n:5,title:'명제 p → q',goal:'가정과 결론을 구분하고, 진리집합의 포함 관계로 p → q의 참·거짓을 판별하며 반례를 들 수 있다.',steps:['s6']},
- {n:6,title:'명제의 역과 대우',goal:'명제의 역과 대우를 만들고, 명제와 그 대우의 참·거짓이 일치함을 설명할 수 있다.',steps:['s7']},
- {n:7,title:'충분조건과 필요조건',goal:'충분조건·필요조건·필요충분조건을 진리집합의 포함 관계로 판단할 수 있다.',steps:['s8']},
+ {n:5,title:'명제 p → q',goal:'가정과 결론을 구분하고, 진리집합의 포함 관계로 p → q의 참·거짓을 판별하며 반례를 들 수 있다.',steps:['s6','qs6']},
+ {n:6,title:'명제의 역과 대우',goal:'명제의 역과 대우를 만들고, 명제와 그 대우의 참·거짓이 일치함을 설명할 수 있다.',steps:['s7','qs7']},
+ {n:7,title:'충분조건과 필요조건',goal:'충분조건·필요조건·필요충분조건을 진리집합의 포함 관계로 판단할 수 있다.',steps:['s8','qs8']},
  {n:8,title:'명제의 증명',goal:'정의와 정리를 구분하고, 대우를 이용한 증명과 귀류법으로 명제를 증명할 수 있다.',steps:['s9']},
  {n:9,title:'절대부등식',goal:'절대부등식의 뜻을 알고, 간단한 절대부등식을 증명하며 등호 성립 조건을 밝힐 수 있다.',steps:['s10']},
  {n:10,title:'마무리와 활동 기록',goal:'단원 전체를 돌아보며 성찰하고, 활동 기록을 완성하여 제출한다.',steps:['s11']},
 ];
 LESSONS.forEach(L=>L.steps.forEach(id=>{const st_=STEPS.find(x=>x.id===id);st_.lesson=L}));
 function lessonStatus(L){const d=L.steps.filter(id=>st(id).done).length;return d===L.steps.length?'done':d||L.steps.some(id=>stepStatus(STEPS.find(x=>x.id===id)))?'started':''}
-STEPS.forEach(s=>{s.draft=s.draft||[];s.revise=s.revise||[];s.quizzes=[...(s.pre||[]).map(q=>({...q,pre:true})),s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
+STEPS.forEach(s=>{s.draft=s.draft||[];s.revise=s.revise||[];if(!s.quizzes)s.quizzes=[...(s.pre||[]).map(q=>({...q,pre:true})),s.quiz,...(s.tb||[]).map(q=>({...q,teacherOnly:true}))].filter(Boolean)});
 /* 오답 정리 화면: 1~5단계 유형 문제 결과 요약 */
-function quizSummaryHTML(){const rows=[];STEPS.filter(x=>['s1','s2','s3','s4','s5'].includes(x.id)).forEach(x=>{x.quizzes.forEach((q,qi)=>{if(q.pre||q.teacherOnly)return;const key=qkey(qi);const d=st(x.id);const ans=d[key]||{};const n=q.items.length,done=q.items.filter((_,i)=>ans[i]).length;const sc=quizScore(x.id,q,key);
-  rows.push(`<tr><td>${esc(q.title)}</td><td>${done}/${n}</td><td>${d[key+'Checked']&&sc.n?`${sc.ok}/${sc.n}`:'—'}</td><td><button class="btn sm" onclick="go('step','${x.id}');setTimeout(()=>{const e=document.getElementById('qz_${x.id}_${qi}');e&&e.scrollIntoView({behavior:'smooth'})},50)">문제로 가기</button></td></tr>`)})});
-  return `<div class="card"><h3><span class="num">점검</span>유형 문제 풀이 현황</h3><p class="small">유형 문제는 1~5단계의 각 내용 끝에 있어요. 아직 풀지 않았거나 채점하지 않은 유형은 “문제로 가기”로 이동해 마무리하세요.</p><table style="width:100%;border-collapse:collapse;font-size:14px" class="list"><tr><th>유형</th><th>푼 문항</th><th>선택형 정답</th><th></th></tr>${rows.join('')}</table></div>`}
+function quizSummaryHTML(){const rows=[];STEPS.filter(x=>['qs1','qs2','qs3','qs4','qs5'].includes(x.id)).forEach(x=>{x.quizzes.forEach((q,qi)=>{const key=qkey(qi);const d=st(x.id);const ans=d[key]||{};const n=q.items.length,done=q.items.filter((_,i)=>ans[i]).length;const sc=quizScore(x.id,q,key);
+  rows.push(`<tr><td>${esc(q.title)}</td><td>${done}/${n}</td><td>${d[key+'Checked']&&sc.n?`${sc.ok}/${sc.n}`:'—'}</td><td><button class="btn sm" onclick="go('step','${x.id}')">문제로 가기</button></td></tr>`)})});
+  return `<div class="card"><h3><span class="num">점검</span>유형 문제 풀이 현황</h3><p class="small">유형 문제 ①~⑤는 각 내용 단계 바로 뒤의 화면에 있어요. 아직 풀지 않았거나 채점하지 않은 유형은 “문제로 가기”로 이동해 마무리하세요.</p><table style="width:100%;border-collapse:collapse;font-size:14px" class="list"><tr><th>유형</th><th>푼 문항</th><th>선택형 정답</th><th></th></tr>${rows.join('')}</table></div>`}
 function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:getP(),r1_tf:g('s2','tf2')||g('s2','tf'),r1_neg:g('s3','neg2')||g('s3','neg'),r1_ntf:g('s3','tf2')||g('s3','tf'),
   r2_s:g('s4','all_s'),r2_tf:g('s4','all_tf'),r2_neg:g('s4','neg_all'),r2_ntf:g('s4','all_tf')==='참'?'거짓':g('s4','all_tf')==='거짓'?'참':'',
   r3_s:g('s4','some_s'),r3_tf:g('s4','some_tf'),r3_neg:g('s4','neg_some'),r3_ntf:g('s4','some_tf')==='참'?'거짓':g('s4','some_tf')==='거짓'?'참':'',
@@ -858,7 +862,7 @@ function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명
 /* ================= 렌더링 ================= */
 const main=$('#main');
 function go(view,id){S.view=view;if(id)S.cur=id;save();render();window.scrollTo({top:0})}
-function stepStatus(s){const d=st(s.id);if(d.done)return'done';if(d.submitted||s.draft.some(f=>d[f.k]))return'started';return''}
+function stepStatus(s){const d=st(s.id);if(d.done)return'done';if(d.submitted||s.draft.some(f=>d[f.k])||(s.quizOnly&&s.quizzes.some((q,qi)=>Object.keys(d[qkey(qi)]||{}).length)))return'started';return''}
 function renderSidebar(){const el=$('#sidebar');let last=null;el.innerHTML=STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;const L=s.lesson;const h=L!==last?`<h3 style="${last?'margin-top:12px':''}">${L.n}차시 · ${esc(L.title)}</h3>`:'';last=L;
   return h+`<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
   `<h3 style="margin-top:14px">기록</h3><button class="navitem ${S.view==='report'?'active':''}" onclick="go('report')"><span class="dot">📄</span><span class="t">활동 기록 · 출력</span></button>
@@ -912,7 +916,8 @@ function renderStep(s){const i=STEPS.indexOf(s);const d=st(s.id);const lock=!!d.
   let html=`<div class="crumb">${L.n}차시 · ${esc(L.title)} &nbsp;(${li+1}/${L.steps.length}) &nbsp;·&nbsp; ${esc(s.part||'')}</div>
    ${li===0?`<div class="hint info" style="margin:0 0 12px"><b>🎯 ${L.n}차시 학습 목표</b> — ${esc(L.goal)}</div>`:''}<div class="card"><h2>${s.title}</h2>
    <div class="tutor"><div class="avatar">T</div><div class="say">${s.intro()}</div></div></div>${preQ}`;
-  if(s.quizOnly){html+=quizSummaryHTML()+`<div class="card"><h3><span class="num">성찰</span>오답 정리</h3>${s.draft.map(f=>fieldHTML(s.id,f,false)).join('')}<p class="closing">${esc(s.closing)}</p><div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">다음으로 →</button></div></div>`;main.innerHTML=html;bindMain();return}
+  if(s.quizOnly){const body=s.quizzes.length?s.quizzes.map((q,qi)=>quizHTML(s,q,qi)).join(''):quizSummaryHTML();const chk=s.quizzes.length&&!s.quizzes.every((q,qi)=>st(s.id)[qkey(qi)+'Checked']);
+    html+=body+`<div class="card">${s.draft.length?`<h3><span class="num">성찰</span>오답 정리</h3>${s.draft.map(f=>fieldHTML(s.id,f,false)).join('')}`:''}<p class="closing">${esc(s.closing)}</p><div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">${chk?'채점한 뒤 다음으로 →':'다음으로 →'}</button></div></div>`;main.innerHTML=html;bindMain();return}
   html+=`<div class="card"><h3><span class="num">${s.simple?'작성':'초안'}</span>${s.simple?'나의 기록':'나의 생각 먼저 쓰기'}</h3>
    ${s.draft.map(f=>fieldHTML(s.id,f,lock&&!s.simple)).join('')}`;
   if(s.simple){html+=`${s.closing?`<p class="closing">${esc(s.closing)}</p>`:''}<div class="stepnav"><button class="btn" onclick="go('step','${STEPS[i-1].id}')">← 이전</button><button class="btn primary" onclick="finishStep('${s.id}')">${i<STEPS.length-1?'완료하고 다음으로 →':'완료하고 활동 기록 보기 →'}</button></div></div>`;main.innerHTML=html;bindMain();return}
@@ -954,7 +959,9 @@ function submitDraft(sid){const s=STEPS.find(x=>x.id===sid);const m=missing(sid,
 function unlock(sid){if(confirm('초안을 다시 쓰면 잠금이 풀려요. 이미 쓴 내용은 유지됩니다. 계속할까요?')){st(sid).submitted=false;save();render()}}
 function finishStep(sid){const s=STEPS.find(x=>x.id===sid);const i=STEPS.indexOf(s);
   if(!s.simple&&!s.quizOnly){const m=missing(sid,s.revise);if(m.length){alert('“고쳐 쓰기와 성찰” 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}}
-  else{const m=missing(sid,s.draft);if(m.length){alert('필수 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}}
+  else{const m=missing(sid,s.draft);if(m.length){alert('필수 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}
+    if(s.quizOnly&&s.quizzes.length){const d=st(sid);const un=s.quizzes.map((q,qi)=>{const ans=d[qkey(qi)]||{};return q.items.filter((_,j)=>!ans[j]).length}).reduce((a,b)=>a+b,0);if(un){alert(`아직 풀지 않은 문항이 ${un}개 있어요. 모두 푼 뒤 채점해 주세요.`);return}
+      if(!s.quizzes.every((q,qi)=>d[qkey(qi)+'Checked'])){alert('“채점하기 / 정답 보기”를 눌러 채점한 뒤 넘어가세요.');return}}}
   st(sid).done=true;st(sid).doneAt=new Date().toISOString();save();
   if(i<STEPS.length-1)go('step',STEPS[i+1].id);else go('report')}
 function resetAll(){if(confirm('모든 기록을 지우고 처음부터 시작할까요? (먼저 “저장”으로 파일을 내려받아 두는 것을 권해요)')){S=fresh();save();render()}}
@@ -1010,7 +1017,7 @@ function reportHTML(state){const s=state.student;const secs=collect(state);const
   <p style="font-size:14px">완료한 단계: <b>${done} / ${STEPS.length}</b> &nbsp;·&nbsp; 나의 명제 p: <b>${esc(getPof(state))||'-'}</b> &nbsp;·&nbsp; p → q: <b>${esc((state.steps.s6||{}).imp||'')||'-'}</b></p>
   ${summaryHTML(state)}
   ${secs.map((sec,si)=>`${(si===0||secs[si-1].lesson!==sec.lesson)?`<h2 class="lesson">${sec.lesson.n}차시 ${esc(sec.lesson.title)}</h2>`:''}<h2>${sec.n}단계. ${esc(sec.title)} ${sec.done?'<span class="pill ok">완료</span>':sec.started?'<span class="pill todo">진행 중</span>':'<span class="pill todo">미작성</span>'}</h2>
-   <table>${sec.items.map(it=>it.h?`<tr><th colspan="2" style="width:auto;background:#e9ecf5">${esc(it.h)}</th></tr>`:`<tr><th>${esc(it.label)}</th><td>${it.value?nl(it.value):'<span class="empty">—</span>'}</td></tr>`).join('')}</table>
+   ${sec.items.length?`<table>${sec.items.map(it=>it.h?`<tr><th colspan="2" style="width:auto;background:#e9ecf5">${esc(it.h)}</th></tr>`:`<tr><th>${esc(it.label)}</th><td>${it.value?nl(it.value):'<span class="empty">—</span>'}</td></tr>`).join('')}</table>`:''}
    ${sec.checks?`<div class="checks">자기 점검: ${sec.checks.map(c=>`<span>${c.ok?'☑':'☐'} ${esc(c.text)}</span>`).join('')}</div>`:''}
    ${sec.quizzes.filter(z=>z.answered).map(z=>`<details class="qrep" ${z.checked?'open':''}><summary style="font-size:13.5px;cursor:pointer;margin-top:6px">${esc(z.title)} — ${z.answered}/${z.items.length} 문항 풀이${z.n?`, 선택형 ${z.ok}/${z.n} 정답`:''}</summary>
     <table style="font-size:13px"><tr><th style="width:auto">문항</th><th style="width:auto">내 답</th><th style="width:auto">정답</th></tr>${z.items.filter(x=>x.my).map(x=>`<tr><td>${esc(x.q)}</td><td>${x.choice?(x.ok?'✅ ':'❌ '):''}${esc(x.my)}</td><td>${nl(x.a)}</td></tr>`).join('')}</table></details>`).join('')}`).join('')}
@@ -1050,7 +1057,7 @@ async function exportDocx(state){
   secs.forEach((sec,si)=>{if(si===0||secs[si-1].lesson!==sec.lesson)kids.push(new Paragraph({heading:HeadingLevel.HEADING_1,spacing:{before:360,after:80},children:[new TextRun({text:`${sec.lesson.n}차시 ${sec.lesson.title}`,font,bold:true,size:28,color:'1D2433'})]}));
     kids.push(new Paragraph({heading:HeadingLevel.HEADING_2,spacing:{before:200,after:100},children:[new TextRun({text:`${sec.n}단계. ${sec.title}  ${sec.done?'[완료]':sec.started?'[진행 중]':'[미작성]'}`,font,bold:true,size:24,color:'3F51B5'})]}));
     const rows=sec.items.map(it=>it.h?new TableRow({children:[cell(it.h,{w:100,bold:1,shade:'E9ECF5',span:2})]}):new TableRow({children:[cell(it.label,{w:30,bold:1,shade:'F3F4F8'}),cell(it.value,{w:70})]}));
-    kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
+    if(rows.length)kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
     if(sec.checks)kids.push(para('자기 점검: '+sec.checks.map(c=>`${c.ok?'☑':'☐'} ${c.text}`).join('   '),{size:17,color:'444444'}));
     sec.quizzes.filter(z=>z.answered).forEach(z=>{kids.push(para(`${z.title} — ${z.answered}/${z.items.length} 문항 풀이${z.n?`, 선택형 ${z.ok}/${z.n} 정답`:''}`,{size:18,bold:1}));
       kids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[cell('문항',{w:44,bold:1,shade:'F3F4F8'}),cell('내 답',{w:26,bold:1,shade:'F3F4F8'}),cell('정답',{w:30,bold:1,shade:'F3F4F8'})]}),
