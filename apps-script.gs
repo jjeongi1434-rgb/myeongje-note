@@ -5,6 +5,8 @@
  * 3) 배포 → 새 배포 → 유형: 웹 앱 / 실행 사용자: 나 / 액세스 권한: 모든 사용자 → 배포 → 웹 앱 URL 복사
  * 4) index.html 의  const SUBMIT_URL=''  안에 그 URL을 붙여넣고 GitHub에 올리기
  *
+ * 시트 구성: '제출' 탭 = 제출 원본(JSON, 취합·불러오기용), '답변' 탭 = 학생 한 명당 한 줄, 필수 답변마다 한 열 (선생님이 읽는 용도)
+ *
  * ※ 이 코드를 고친 뒤에는  배포 → 배포 관리 → (연필) 편집 → 버전: 새 버전 → 배포  를 해야 반영됩니다. (URL은 그대로)
  */
 const KEY = '명제교사';
@@ -24,10 +26,40 @@ function doPost(e) {
     // 학급·학번이 날짜/숫자로 자동 변환되지 않도록 텍스트 서식으로 다시 기록
     const r = sh.getLastRow();
     sh.getRange(r, 2, 1, 3).setNumberFormat('@').setValues([[String(st.cls || ''), String(st.sid || ''), String(st.name || '')]]);
+    if (d.answers && d.answers.length) upsertAnswers_(d.answers);
     return out_({ ok: true });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
   }
+}
+
+/* '답변' 탭: 학생 한 명 = 한 줄, 필수 답변마다 한 열. 같은 학번+이름이 다시 제출하면 그 줄을 덮어쓴다 */
+const ANS_SHEET = '답변';
+function upsertAnswers_(answers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(ANS_SHEET);
+  if (!sh) { sh = ss.insertSheet(ANS_SHEET); sh.setFrozenRows(1); sh.setFrozenColumns(2); }
+  const heads = answers.map(a => String(a[0]));
+  const vals = answers.map(a => a[1] == null ? '' : String(a[1]));
+  let header = sh.getLastColumn() ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String) : [];
+  if (header.length === 0) { header = ['제출시각'].concat(heads); sh.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold'); }
+  // 새 열 추가
+  const missing = heads.filter(h => header.indexOf(h) < 0);
+  if (missing.length) { sh.getRange(1, header.length + 1, 1, missing.length).setValues([missing]).setFontWeight('bold'); header = header.concat(missing); }
+  // 기존 줄 찾기 (학번 + 이름)
+  const iSid = header.indexOf('학번'), iName = header.indexOf('이름');
+  const sid = vals[heads.indexOf('학번')] || '', name = vals[heads.indexOf('이름')] || '';
+  let rowIdx = -1;
+  if (sh.getLastRow() > 1) {
+    const keys = sh.getRange(2, 1, sh.getLastRow() - 1, header.length).getValues();
+    for (let r = 0; r < keys.length; r++) if (String(keys[r][iSid]) === sid && String(keys[r][iName]) === name) { rowIdx = r + 2; break; }
+  }
+  const row = header.map(h => { const k = heads.indexOf(h); return h === '제출시각' ? new Date() : (k < 0 ? '' : vals[k]); });
+  if (rowIdx < 0) rowIdx = sh.getLastRow() + 1;
+  const rng = sh.getRange(rowIdx, 1, 1, header.length);
+  rng.setNumberFormat('@');
+  rng.setValues([row]);
+  sh.getRange(rowIdx, 1).setValue(new Date());
 }
 
 function doGet(e) {

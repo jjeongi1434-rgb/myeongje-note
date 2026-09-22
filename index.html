@@ -858,7 +858,7 @@ async function submitToTeacher(){const url=submitUrl();
   if(!ensureIdentity())return;
   const done=STEPS.filter(x=>st(x.id).done).length;
   const btns=[...document.querySelectorAll('button')].filter(b=>/제출/.test(b.textContent));btns.forEach(b=>b.disabled=true);
-  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({student:S.student,done,total:STEPS.length,lessons:LESSONS.filter(L=>L.steps.every(id=>st(id).done)).length,state:S})});
+  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({student:S.student,done,total:STEPS.length,lessons:LESSONS.filter(L=>L.steps.every(id=>st(id).done)).length,answers:flatAnswers(S),state:S})});
     const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
     S.lastSubmit=new Date().toISOString();save();alert(`제출 완료! (${S.student.sid} ${S.student.name}, ${done}/${STEPS.length}단계)\n수정한 뒤 다시 제출하면 최신 것으로 반영돼요.`)}
   catch(e){alert('제출에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 보세요.\n계속 안 되면 “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.')}
@@ -1029,11 +1029,19 @@ const SYM=['≥','≤','≠','²','³','√','¬','~','→','⇒','⇔','∀','�
     if(!b.dataset.sym||!lastFocus||lastFocus.readOnly)return;const el=lastFocus;const st0=el.selectionStart,en=el.selectionEnd;el.setRangeText(b.dataset.sym,st0,en,'end');el.focus();el.dispatchEvent(new Event('input',{bubbles:true}))}})();
 
 /* ================= 보고서 ================= */
+/* 구글 시트 '답변' 탭용: 학생 한 명 = 한 줄, 필수 답변마다 한 열 */
+function flatAnswers(state){const secs=collect(state);const s=state.student;const A=[['학번',s.sid],['이름',s.name],['날짜',s.date],['완료 단계',`${secs.filter(x=>x.done).length}/${STEPS.length}`],['완료 차시',`${LESSONS.filter(L=>L.steps.every(id=>(state.steps[id]||{}).done)).length}/${LESSONS.length}`]];
+  secs.forEach(sec=>{const pre=`${sec.n}.${sec.title}`;let grp='';A.push([`${pre} · 상태`,sec.done?'완료':sec.started?'진행 중':'미작성']);
+    sec.items.forEach(it=>{if(it.h){grp=it.h.startsWith('초안')?'초안':it.h.startsWith('고쳐')?'수정':it.h;return}A.push([`${pre} · ${grp?'['+grp+'] ':''}${it.label}`,it.value||''])});
+    if(sec.checks)A.push([`${pre} · 자기 점검`,`${sec.checks.filter(c=>c.ok).length}/${sec.checks.length}`]);
+    sec.quizzes.filter(z=>!z.teacherOnly).forEach(z=>{A.push([`${pre} · ${z.title.replace(/ — .*$/,'')} 점수`,z.answered?(z.n?`${z.ok}/${z.n} (풀이 ${z.answered}/${z.items.length}${z.checked?'':', 미채점'})`:`풀이 ${z.answered}/${z.items.length}`):'']);
+      z.items.forEach((x,j)=>{if(!x.choice)A.push([`${pre} · ${z.title.replace(/ — .*$/,'')} ${j+1}) ${x.q.slice(0,40)}`,x.my||''])})})});
+  return A}
 function collect(state){const out=[];const g=(id,k)=>(state.steps[id]&&state.steps[id][k])||'';
   STEPS.forEach((s,i)=>{const d=state.steps[s.id]||{};const items=[];
     const add=f=>{if(f.type==='head'){items.push({h:f.label.replace(/^▣ /,'')});return}if(f.type==='ratings'){const r=d[f.k]||{};f.items.forEach((it,j)=>items.push({label:it,value:r[j]||''}))}else items.push({label:f.label,value:d[f.k]||''})};
     if(!s.simple&&!s.quizOnly){items.push({h:'초안 (처음 생각)'});s.draft.forEach(add);items.push({h:'고쳐 쓰기와 성찰'});s.revise.forEach(add)}else s.draft.forEach(add);
-    const quizzes=s.quizzes.map((qz,qi)=>{const key=qkey(qi);const ans=d[key]||{};const qs=qz.items.map((it,j)=>({q:it.q,my:ans[j]||'',a:it.a,choice:!!(it.opts||qz.opts),ok:ans[j]===it.a}));const ch=qs.filter(x=>x.choice);return {title:qz.title,items:qs,n:ch.length,ok:ch.filter(x=>x.ok).length,answered:qs.filter(x=>x.my).length,checked:!!d[key+'Checked']}});
+    const quizzes=s.quizzes.map((qz,qi)=>{const key=qkey(qi);const ans=d[key]||{};const qs=qz.items.map((it,j)=>({q:it.q,my:ans[j]||'',a:it.a,choice:!!(it.opts||qz.opts),ok:ans[j]===it.a}));const ch=qs.filter(x=>x.choice);return {title:qz.title,teacherOnly:!!qz.teacherOnly,items:qs,n:ch.length,ok:ch.filter(x=>x.ok).length,answered:qs.filter(x=>x.my).length,checked:!!d[key+'Checked']}});
     out.push({n:i+1,title:s.title,lesson:s.lesson,items,quizzes,checks:(s.simple||s.quizOnly)?null:s.checklist.map((c,j)=>({text:c,ok:!!(d.checks&&d.checks[j])})),done:!!d.done,started:!!(d.submitted||s.draft.some(f=>d[f.k]))})});
   return out}
 /* 정리표: 선생님과 함께하는 명제 정리하기 */
