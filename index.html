@@ -847,7 +847,7 @@ function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:
 /* 교사 모드: 교과서 문제는 교사 모드에서만 표시 */
 const TEACHER_CODE='명제교사';
 /* ★ 선생님 설정: 구글 시트 수집용 Apps Script 웹 앱 주소 (README의 “제출 수집 설정” 참고). 비어 있으면 파일 저장만 가능 */
-const SUBMIT_URL='';
+const SUBMIT_URL='https://script.google.com/macros/s/AKfycbyUPDl7LhANpEuPPmtvsVdFMwk2e7AHymUUPUlKplGoKM8Ko9T5Sx0vTcf35TwhEQeM/exec';
 function submitUrl(){try{return localStorage.getItem('myeongje-submit-url')||SUBMIT_URL}catch(e){return SUBMIT_URL}}
 async function submitToTeacher(){const url=submitUrl();
   if(!url){alert('아직 제출 주소가 설정되지 않았어요. “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.');return}
