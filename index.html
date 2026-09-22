@@ -61,6 +61,7 @@ main{padding:24px 28px 120px;max-width:920px;width:100%;margin:0 auto}
 .field input[type=text],.field textarea,.field select{width:100%;border:1px solid #cfd4e2;border-radius:9px;padding:9px 11px;background:#fff;outline:none;transition:.15s}
 .field textarea{min-height:76px;resize:vertical}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.field input.miss{border-color:#e39a9a;background:#fff8f8}
 .field input[readonly],.field textarea[readonly]{background:#f7f8fb;color:#374151}
 .radios{display:flex;gap:8px;flex-wrap:wrap}
 .radios label{border:1px solid #cfd4e2;border-radius:999px;padding:6px 14px;cursor:pointer;background:#fff;font-size:14px}
@@ -861,12 +862,9 @@ async function submitToTeacher(){const url=submitUrl();
     S.lastSubmit=new Date().toISOString();save();alert(`제출 완료! (${S.student.cls} ${S.student.sid} ${S.student.name}, ${done}/${STEPS.length}단계)\n수정한 뒤 다시 제출하면 최신 것으로 반영돼요.`)}
   catch(e){alert('제출에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 보세요.\n계속 안 되면 “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.')}
   finally{btns.forEach(b=>b.disabled=false)}}
-function ensureIdentity(){const st_=S.student;
-  if(!st_.name.trim()){const v=prompt('이름을 입력하세요.');if(v===null)return false;st_.name=v.trim();if(!st_.name)return false}
-  if(!st_.cls.trim()){const v=prompt('학급을 입력하세요. (예: 1학년 3반)',st_.cls);if(v===null)return false;st_.cls=v.trim()}
-  if(!st_.sid.trim()){const v=prompt('학번을 입력하세요.',st_.sid);if(v===null)return false;st_.sid=v.trim()}
-  while(!/^\d{4}$/.test(st_.pin||'')){const v=prompt('제출 비밀번호(숫자 4자리)를 정하세요. 다음 시간에 기록을 불러올 때 필요해요.',st_.pin||'');if(v===null)return false;st_.pin=v.trim()}
-  save();renderWho();return true}
+function missingStudent(){const st_=S.student;const m=[];if(!(st_.cls||'').trim())m.push('cls');if(!(st_.sid||'').trim())m.push('sid');if(!(st_.name||'').trim())m.push('name');if(!/^\d{4}$/.test(st_.pin||''))m.push('pin');return m}
+function ensureIdentity(){const m=missingStudent();if(!m.length)return true;
+  alert('학생 정보(학급·학번·이름·제출 비밀번호)를 먼저 모두 입력해 주세요.');go('home');setTimeout(()=>{const el=document.querySelector(`[data-s="${m[0]}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}},50);return false}
 async function loadMine(){const url=submitUrl();if(!url){alert('제출 주소가 설정되지 않아 불러올 수 없어요.');return}
   const cls=prompt('학급 (제출할 때 쓴 그대로)',S.student.cls);if(cls===null)return;const sid=prompt('학번',S.student.sid);if(sid===null)return;const name=prompt('이름',S.student.name);if(name===null)return;const pin=prompt('제출 비밀번호 (숫자 4자리)','');if(pin===null)return;
   try{const r=await fetch(url+(url.includes('?')?'&':'?')+'cls='+encodeURIComponent(cls.trim())+'&sid='+encodeURIComponent(sid.trim())+'&name='+encodeURIComponent(name.trim())+'&pin='+encodeURIComponent(pin.trim()));const j=await r.json();
@@ -896,7 +894,8 @@ function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명
 
 /* ================= 렌더링 ================= */
 const main=$('#main');
-function go(view,id){S.view=view;if(id)S.cur=id;save();render();window.scrollTo({top:0})}
+function go(view,id){if(view==='step'&&missingStudent().length){S.view='home';save();render();alert('먼저 홈 화면의 학생 정보(학급·학번·이름·제출 비밀번호)를 모두 입력해 주세요.');const el=document.querySelector(`[data-s="${missingStudent()[0]}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}return}
+  S.view=view;if(id)S.cur=id;save();render();window.scrollTo({top:0})}
 function stepStatus(s){const d=st(s.id);if(d.done)return'done';if(d.submitted||s.draft.some(f=>d[f.k])||(s.quizOnly&&s.quizzes.some((q,qi)=>Object.keys(d[qkey(qi)]||{}).length)))return'started';return''}
 function renderSidebar(){const el=$('#sidebar');let last=null;el.innerHTML=STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;const L=s.lesson;const h=L!==last?`<h3 style="${last?'margin-top:12px':''}">${L.n}차시 · ${esc(L.title)}</h3>`:'';last=L;
   return h+`<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
@@ -918,14 +917,15 @@ function renderHome(){const s=S.student;
   <tr><th>Ⅳ. 선생님과 함께하는 개념정리</th><td>개념정리 ① p → q ② 역과 대우 ③ 충분·필요조건 — 빈칸 채우기 → 내 명제로 탐구 → 문제</td></tr>
   <tr><th>Ⅴ. 교과서로 확장하기</th><td>정의·정리와 증명(대우·귀류법), 절대부등식</td></tr>
   <tr><th>Ⅵ. 마무리</th><td>성찰·자기평가 → <b>활동 기록</b> 인쇄 / Word 제출</td></tr></table>
-  <p class="small" style="margin-top:8px">수업은 아래 <b>10차시</b>로 진행돼요. 각 차시의 첫 화면에 학습 목표가 표시되고, 차시가 끝나면 “저장”으로 기록을 내려받아 두세요.</p>
-  <div class="hint info">✍️ 입력한 내용은 이 브라우저에 자동 저장돼요. 다른 기기에서 이어서 하려면 상단의 <b>저장</b>으로 파일을 내려받은 뒤 <b>불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div></div>
+  <p class="small" style="margin-top:8px">수업은 아래 <b>10차시</b>로 진행돼요. 각 차시의 첫 화면에 학습 목표가 표시되고, 수업이 끝나거나 끊길 때는 상단의 <b>📤 제출</b>을 누르세요.</p>
+  <div class="hint info">✍️ 입력한 내용은 이 기기에 자동 저장되고, <b>📤 제출</b>을 누르면 선생님 제출함에 보관돼요. 다른 기기에서 이어서 하려면 아래 <b>내 기록 불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div></div>
   <div class="card"><h3>학생 정보</h3><div class="grid2">
-   <label class="field"><span class="lbl">학교·학급 <span class="small">(예: 1학년 3반)</span></span><input type="text" data-s="cls" value="${esc(s.cls)}"></label>
-   <label class="field"><span class="lbl">학번</span><input type="text" data-s="sid" value="${esc(s.sid)}"></label>
-   <label class="field"><span class="lbl">이름 <span class="req">*</span></span><input type="text" data-s="name" value="${esc(s.name)}"></label>
+   <label class="field"><span class="lbl">학교·학급 <span class="req">*</span> <span class="small">(예: 1학년 3반)</span></span><input type="text" data-s="cls" value="${esc(s.cls)}" class="${s.cls.trim()?'':'miss'}"></label>
+   <label class="field"><span class="lbl">학번 <span class="req">*</span></span><input type="text" data-s="sid" value="${esc(s.sid)}" class="${s.sid.trim()?'':'miss'}"></label>
+   <label class="field"><span class="lbl">이름 <span class="req">*</span></span><input type="text" data-s="name" value="${esc(s.name)}" class="${s.name.trim()?'':'miss'}"></label>
    <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label>
-   <label class="field"><span class="lbl">제출 비밀번호 (숫자 4자리) <span class="req">*</span></span><input type="text" inputmode="numeric" maxlength="4" data-s="pin" value="${esc(s.pin||'')}" placeholder="예: 0315"><small class="help">다른 기기·다음 시간에 “내 기록 불러오기”로 이어서 할 때 본인 확인용이에요. 잊지 않을 숫자로 정하세요.</small></label></div>
+   <label class="field"><span class="lbl">제출 비밀번호 (숫자 4자리) <span class="req">*</span></span><input type="text" inputmode="numeric" maxlength="4" data-s="pin" value="${esc(s.pin||'')}" placeholder="예: 0315" class="${/^\d{4}$/.test(s.pin||'')?'':'miss'}"><small class="help">다른 기기·다음 시간에 “내 기록 불러오기”로 이어서 할 때 본인 확인용이에요. 잊지 않을 숫자로 정하세요.</small></label></div>
+   <p class="small" style="margin:0">별표(*) 항목을 모두 입력해야 학습 단계로 넘어갈 수 있어요. 한 번 입력하면 이 기기에 저장되고, 제출할 때 다시 묻지 않아요.</p>
    <div class="hint ${storageWeak?'warn':'info'}" style="margin-top:4px">${storageWeak?'⚠️ 이 브라우저는 기록을 오래 보관하지 못해요(카카오톡·네이버 앱 안의 브라우저이거나 시크릿 모드). <b>수업이 끝나기 전에 꼭 📤 제출</b>하고, 다음 시간에는 아래 “내 기록 불러오기”로 이어서 하세요. 가능하면 Chrome·Safari로 열어 주세요.':'💡 수업이 끊길 때는 그 자리에서 <b>📤 제출</b>을 누르세요. 다음 시간에 같은 기기면 자동으로 이어지고, 다른 기기면 아래 “내 기록 불러오기”로 이어서 할 수 있어요.'}</div>
    <p style="margin:10px 0 0"><button class="btn sm" onclick="loadMine()">📥 내 기록 불러오기 (제출한 기록에서)</button> ${S.lastSubmit?`<span class="small">마지막 제출: ${esc(S.lastSubmit.replace('T',' ').slice(0,16))}</span>`:''}</p></div>
   <div class="card"><h3>차시별 학습 계획</h3><div style="overflow:auto"><table class="lessons"><tr><th style="width:52px">차시</th><th>주제 · 학습 목표</th><th style="width:38%">활동 화면</th><th style="width:64px">상태</th></tr>
@@ -1008,7 +1008,7 @@ let lastFocus=null;
 function bindMain(){
   main.addEventListener('focusin',e=>{if(e.target.matches('input[type=text],textarea'))lastFocus=e.target});
   main.oninput=e=>{const t=e.target;
-    if(t.dataset.s){S.student[t.dataset.s]=t.value;save();renderWho();return}
+    if(t.dataset.s){S.student[t.dataset.s]=t.value;save();renderWho();if(t.dataset.s!=='date')t.classList.toggle('miss',t.dataset.s==='pin'?!/^\d{4}$/.test(t.value):!t.value.trim());return}
     if(t.dataset.k&&S.cur){st(S.cur)[t.dataset.k]=t.value;save();renderSidebar();return}
     if(t.dataset.qi!==undefined&&t.type==='text'&&S.cur){const k=t.dataset.qk||'quiz';const o=st(S.cur)[k]||(st(S.cur)[k]={});o[t.dataset.qi]=t.value;save();return}
     if(t.dataset.rk&&S.cur){const o=st(S.cur)[t.dataset.rk]||(st(S.cur)[t.dataset.rk]={});o[t.dataset.ri]=t.value;save();return}};
