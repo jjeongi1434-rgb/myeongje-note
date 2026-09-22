@@ -170,6 +170,7 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
   <div class="who" id="who"></div>
   <div class="actions">
     <button class="btn sm" onclick="go('report')">📄 활동 기록</button>
+    <button class="btn sm primary" onclick="submitToTeacher()">📤 제출</button>
     <button class="btn sm" onclick="saveJSON()">💾 저장</button>
     <button class="btn sm" onclick="loadJSONPrompt()">📂 불러오기</button>
   </div>
@@ -845,6 +846,24 @@ function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:
   let n=0;for(const k in m){if(!String(d[k]||'').trim()&&m[k]){d[k]=m[k];n++}}save();render();alert(n?`${n}개 항목을 Ⅰ부 기록에서 가져왔어요. 수업 중 고친 내용으로 수정해 주세요.`:'가져올 새 내용이 없어요. (이미 채워져 있거나 Ⅰ부 기록이 비어 있어요)')}
 /* 교사 모드: 교과서 문제는 교사 모드에서만 표시 */
 const TEACHER_CODE='명제교사';
+/* ★ 선생님 설정: 구글 시트 수집용 Apps Script 웹 앱 주소 (README의 “제출 수집 설정” 참고). 비어 있으면 파일 저장만 가능 */
+const SUBMIT_URL='';
+function submitUrl(){try{return localStorage.getItem('myeongje-submit-url')||SUBMIT_URL}catch(e){return SUBMIT_URL}}
+async function submitToTeacher(){const url=submitUrl();
+  if(!url){alert('아직 제출 주소가 설정되지 않았어요. “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.');return}
+  if(!S.student.name.trim()){alert('홈 화면에서 이름을 먼저 입력해 주세요.');go('home');return}
+  const done=STEPS.filter(x=>st(x.id).done).length;
+  const btns=[...document.querySelectorAll('button')].filter(b=>/제출/.test(b.textContent));btns.forEach(b=>b.disabled=true);
+  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({student:S.student,done,total:STEPS.length,lessons:LESSONS.filter(L=>L.steps.every(id=>st(id).done)).length,state:S})});
+    const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
+    S.lastSubmit=new Date().toISOString();save();alert(`제출 완료! (${S.student.cls} ${S.student.sid} ${S.student.name}, ${done}/${STEPS.length}단계)\n수정한 뒤 다시 제출하면 최신 것으로 반영돼요.`)}
+  catch(e){alert('제출에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 보세요.\n계속 안 되면 “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.')}
+  finally{btns.forEach(b=>b.disabled=false)}}
+async function fetchSubmissions(){const url=submitUrl();if(!url){alert('제출 주소(SUBMIT_URL)가 설정되지 않았어요. README의 “제출 수집 설정”을 참고하세요.');return}
+  const key=prompt('교사 모드 코드를 입력하세요. (Apps Script의 KEY와 같아야 해요)');if(key===null)return;
+  try{const r=await fetch(url+(url.includes('?')?'&':'?')+'key='+encodeURIComponent(key.trim()));const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
+    T=j.items.filter(x=>x&&x.steps&&x.student);T.sort((a,b)=>(a.student.cls+a.student.sid).localeCompare(b.student.cls+b.student.sid,'ko'));render();alert(`${T.length}명의 제출을 불러왔어요. (학생별 최신 제출 기준)`)}
+  catch(e){alert('불러오기에 실패했어요. 주소와 코드를 확인해 주세요. ('+e.message+')')}}
 const TKEY='myeongje-teacher';
 function isTeacher(){try{return localStorage.getItem(TKEY)==='1'}catch(e){return false}}
 function setTeacher(on){try{on?localStorage.setItem(TKEY,'1'):localStorage.removeItem(TKEY)}catch(e){}render()}
@@ -1025,11 +1044,17 @@ function reportHTML(state){const s=state.student;const secs=collect(state);const
   <div class="foot">명제 탐구 노트 · 출력일 ${today()}</div></div>`}
 function getPof(state){const s1=state.steps.s1||{};return s1.p_final||s1.a||''}
 function renderReport(){main.innerHTML=`<div class="card noprint"><h3>📄 활동 기록 · 출력</h3><p class="small">아래 보고서를 인쇄하거나(PDF로 저장 가능), Word 파일로 내려받아 제출하세요. 이어서 작업하려면 JSON 저장 파일을 함께 보관하세요.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" onclick="window.print()">🖨 인쇄 / PDF 저장</button><button class="btn" onclick="exportDocx(S)">📝 Word(.docx) 다운로드</button><button class="btn" onclick="saveJSON()">💾 JSON 저장</button><button class="btn" onclick="exportText(S)">📃 텍스트(.txt)</button></div></div>`+reportHTML(S)}
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" onclick="submitToTeacher()">📤 선생님께 제출</button><button class="btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button><button class="btn" onclick="exportDocx(S)">📝 Word(.docx) 다운로드</button><button class="btn" onclick="saveJSON()">💾 JSON 저장</button><button class="btn" onclick="exportText(S)">📃 텍스트(.txt)</button></div>
+  ${S.lastSubmit?`<p class="small" style="margin:8px 0 0">마지막 제출: ${esc(S.lastSubmit.replace('T',' ').slice(0,16))}</p>`:''}</div>`+reportHTML(S)}
 
 /* ================= 저장 / 불러오기 ================= */
 function fname(state,ext){const s=state.student;return `명제탐구_${[s.cls,s.sid,s.name].filter(Boolean).join('_')||'학생'}_${(s.date||today()).replace(/-/g,'')}.${ext}`}
-function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function download(blob,name){
+  const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(mobile&&navigator.canShare){try{const f=new File([blob],name,{type:blob.type||'application/octet-stream'});if(navigator.canShare({files:[f]})){navigator.share({files:[f],title:name}).catch(()=>{});return}}catch(e){}}
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.rel='noopener';document.body.appendChild(a);a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},60000);
+  if(mobile)setTimeout(()=>{if(confirm('파일이 내려받아지지 않았다면 “확인”을 눌러 새 창으로 열어 보세요. (카카오톡·네이버 앱 안에서는 오른쪽 위 메뉴 → “다른 브라우저로 열기”를 이용하면 저장이 돼요)')){window.open(url,'_blank')}},1500)}
 function saveJSON(){download(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),fname(S,'json'))}
 function loadJSONPrompt(){$('#fileIn').value='';$('#fileIn').click()}
 $('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);if(!j.steps||!j.student)throw 0;if(confirm(`"${j.student.name||'이름 없음'}"의 기록을 불러올까요? 현재 브라우저의 기록은 덮어써져요.`)){S=j;save();go('home')}}catch(err){alert('올바른 저장 파일이 아니에요.')}})};
@@ -1073,7 +1098,10 @@ let T=[];
 function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🔐 교사 모드</h3>
   ${isTeacher()?`<p class="small">교사 모드가 <b>켜져</b> 있어요. 각 단계 끝에 <b>교과서 문제</b> 카드가 표시되고, 풀면 활동 기록에도 들어가요. 학생 화면에는 보이지 않아요.</p><button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button>`
   :`<p class="small">교과서 문제 세트는 교사 모드에서만 표시돼요. 코드를 입력하면 이 브라우저에서 교사 모드가 켜져요. (수업 중 화면에 띄워 함께 풀 때 사용)</p><button class="btn sm primary" onclick="enterTeacher()">교사 모드 켜기</button>`}</div>
-  <div class="card teacher noprint"><h3>👩‍🏫 교사용 취합</h3><p class="small">학생들이 “저장”으로 내려받은 JSON 파일을 여러 개 한꺼번에 올리면 진행 상황을 표로 보고, 보고서를 한 번에 인쇄할 수 있어요. 파일은 이 브라우저 안에서만 처리되며 어디에도 전송되지 않아요.</p>
+  <div class="card teacher noprint"><h3>👩‍🏫 교사용 취합</h3>
+  <p class="small"><b>방법 1 — 제출함에서 불러오기:</b> 학생들이 “📤 제출” 버튼으로 보낸 기록을 구글 시트 제출함에서 한 번에 가져와요. (설정: README “제출 수집 설정”) ${submitUrl()?'<span class="pill ok">제출 주소 설정됨</span>':'<span class="pill todo">제출 주소 미설정</span>'}</p>
+  <p><button class="btn sm primary" onclick="fetchSubmissions()">📥 제출함에서 불러오기</button> <button class="btn sm" onclick="const u=prompt('제출 주소(Apps Script 웹 앱 URL)를 입력하세요. 비우면 기본값(SUBMIT_URL)을 써요.',submitUrl());if(u===null)return;try{u.trim()?localStorage.setItem('myeongje-submit-url',u.trim()):localStorage.removeItem('myeongje-submit-url')}catch(e){}render()">주소 설정(이 브라우저)</button></p>
+  <p class="small" style="margin-top:12px"><b>방법 2 — 파일로 모으기:</b> 학생들이 “저장”으로 내려받은 JSON 파일을 여러 개 한꺼번에 올려요. 파일은 이 브라우저 안에서만 처리돼요.</p>
   <div class="drop" id="drop">여기에 JSON 파일들을 끌어다 놓거나 <button class="btn sm" onclick="$('#fileMulti').value='';$('#fileMulti').click()">파일 선택</button></div>
   ${T.length?`<p style="margin-top:12px"><b>${T.length}명</b> 불러옴 &nbsp; <button class="btn sm" onclick="printAll()">🖨 전체 보고서 인쇄</button> <button class="btn sm" onclick="exportCSV()">📊 CSV 내려받기</button> <button class="btn sm" onclick="T=[];render()">비우기</button></p>
   <div style="overflow:auto"><table class="list"><tr><th>#</th><th>학급</th><th>학번</th><th>이름</th><th>완료</th><th>차시</th><th>나의 명제 p</th><th>p → q</th><th>어려웠던 단계</th><th>질문</th><th></th></tr>
