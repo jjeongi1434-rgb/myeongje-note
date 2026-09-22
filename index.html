@@ -1034,7 +1034,9 @@ function flatAnswers(state){const secs=collect(state);const s=state.student;cons
   secs.forEach(sec=>{const pre=`${sec.n}.${sec.title}`;let grp='';A.push([`${pre} · 상태`,sec.done?'완료':sec.started?'진행 중':'미작성']);
     sec.items.forEach(it=>{if(it.h){grp=it.h.startsWith('초안')?'초안':it.h.startsWith('고쳐')?'수정':it.h;return}A.push([`${pre} · ${grp?'['+grp+'] ':''}${it.label}`,it.value||''])});
     if(sec.checks)A.push([`${pre} · 자기 점검`,`${sec.checks.filter(c=>c.ok).length}/${sec.checks.length}`]);
-    sec.quizzes.filter(z=>!z.teacherOnly).forEach(z=>{A.push([`${pre} · ${z.title.replace(/ — .*$/,'')} 점수`,z.answered?(z.n?`${z.ok}/${z.n} (풀이 ${z.answered}/${z.items.length}${z.checked?'':', 미채점'})`:`풀이 ${z.answered}/${z.items.length}`):'']);
+    sec.quizzes.filter(z=>!z.teacherOnly).forEach(z=>{const wrong=z.items.map((x,j)=>x.choice&&x.my&&!x.ok?j+1:0).filter(Boolean);const blank=z.items.map((x,j)=>!x.my?j+1:0).filter(Boolean);
+      const note=[wrong.length?`틀림 ${wrong.join(', ')}`:(z.n&&!blank.length?'모두 정답':''),blank.length?`안 푼 문항 ${blank.join(', ')}`:'',z.checked?'':'미채점'].filter(Boolean).join(' · ');
+      A.push([`${pre} · ${z.title.replace(/ — .*$/,'')} 점수`,z.answered?(z.n?`${z.ok}/${z.n}${note?' ('+note+')':''}`:`풀이 ${z.answered}/${z.items.length}${note?' ('+note+')':''}`):'']);
       z.items.forEach((x,j)=>{if(!x.choice)A.push([`${pre} · ${z.title.replace(/ — .*$/,'')} ${j+1}) ${x.q.slice(0,40)}`,x.my||''])})})});
   return A}
 function collect(state){const out=[];const g=(id,k)=>(state.steps[id]&&state.steps[id][k])||'';
