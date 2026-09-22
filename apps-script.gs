@@ -19,7 +19,11 @@ function doPost(e) {
     const json = JSON.stringify(d.state || {});
     const parts = [];
     for (let i = 0; i < json.length; i += CHUNK) parts.push(json.slice(i, i + CHUNK));
-    sh.appendRow([new Date(), st.cls || '', st.sid || '', st.name || '', d.done || 0, d.total || 0, d.lessons || 0, parts.length].concat(parts));
+    const row = [new Date(), st.cls || '', st.sid || '', st.name || '', d.done || 0, d.total || 0, d.lessons || 0, parts.length].concat(parts);
+    sh.appendRow(row);
+    // 학급·학번이 날짜/숫자로 자동 변환되지 않도록 텍스트 서식으로 다시 기록
+    const r = sh.getLastRow();
+    sh.getRange(r, 2, 1, 3).setNumberFormat('@').setValues([[String(st.cls || ''), String(st.sid || ''), String(st.name || '')]]);
     return out_({ ok: true });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
@@ -57,7 +61,9 @@ function readLatest_() {
     for (let i = 0; i < n; i++) json += String(row[8 + i] || '');
     try {
       const state = JSON.parse(json);
-      const id = [String(row[1]).trim(), String(row[2]).trim(), String(row[3]).trim()].join('|');
+      // 시트 셀은 "1-3" 같은 학급을 날짜로 바꿔 버릴 수 있으므로, 기록 안의 학생 정보로 식별한다
+      const st = state.student || {};
+      const id = [String(st.cls || row[1]).trim(), String(st.sid || row[2]).trim(), String(st.name || row[3]).trim()].join('|');
       latest[id] = { at: row[0], state: state };   // 나중 행이 최신
     } catch (err) {}
   }
