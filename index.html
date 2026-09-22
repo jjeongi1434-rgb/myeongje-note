@@ -1005,7 +1005,7 @@ function finishStep(sid){const s=STEPS.find(x=>x.id===sid);const i=STEPS.indexOf
 function resetAll(){if(confirm('모든 기록을 지우고 처음부터 시작할까요? (먼저 “저장”으로 파일을 내려받아 두는 것을 권해요)')){S=fresh();save();render()}}
 
 let lastFocus=null;
-function bindMain(){
+function bindMain(){if(main.dataset.bound)return;main.dataset.bound='1';
   main.addEventListener('focusin',e=>{if(e.target.matches('input[type=text],textarea'))lastFocus=e.target});
   main.oninput=e=>{const t=e.target;
     if(t.dataset.s){S.student[t.dataset.s]=t.value;save();renderWho();if(t.dataset.s!=='date')t.classList.toggle('miss',t.dataset.s==='pin'?!/^\d{4}$/.test(t.value):!t.value.trim());return}
@@ -1145,7 +1145,7 @@ function exportCSV(){const head=['학번','이름','날짜','완료단계','명�
   const csv=[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');download(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}),`명제탐구_취합_${today().replace(/-/g,'')}.csv`)}
 
 /* ================= 시작 ================= */
-render();
+bindMain();render();
 </script>
 </body>
 </html>
