@@ -4,6 +4,8 @@
  * 2) 아래 KEY를 원하는 교사 코드로 바꾸기 (앱의 교사 모드 코드와 같게 하면 편해요)
  * 3) 배포 → 새 배포 → 유형: 웹 앱 / 실행 사용자: 나 / 액세스 권한: 모든 사용자 → 배포 → 웹 앱 URL 복사
  * 4) index.html 의  const SUBMIT_URL=''  안에 그 URL을 붙여넣고 GitHub에 올리기
+ *
+ * ※ 이 코드를 고친 뒤에는  배포 → 배포 관리 → (연필) 편집 → 버전: 새 버전 → 배포  를 해야 반영됩니다. (URL은 그대로)
  */
 const KEY = '명제교사';
 const SHEET = '제출';
@@ -25,7 +27,25 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  if (!e.parameter.key || e.parameter.key !== KEY) return out_({ ok: false, error: 'key' });
+  const P = e.parameter || {};
+  // 학생 본인 기록 불러오기: ?cls=&sid=&name=&pin=
+  if (P.name && P.pin) {
+    const latest = readLatest_();
+    const id = [String(P.cls || '').trim(), String(P.sid || '').trim(), String(P.name || '').trim()].join('|');
+    const hit = latest[id];
+    if (!hit) return out_({ ok: false, error: 'notfound' });
+    const pin = (hit.state.student && hit.state.student.pin) || '';
+    if (!pin || pin !== String(P.pin).trim()) return out_({ ok: false, error: 'pin' });
+    return out_({ ok: true, submittedAt: hit.at, state: hit.state });
+  }
+  // 교사 취합: ?key=
+  if (!P.key || P.key !== KEY) return out_({ ok: false, error: 'key' });
+  const latest = readLatest_();
+  const items = Object.keys(latest).map(k => Object.assign({ submittedAt: latest[k].at }, latest[k].state));
+  return out_({ ok: true, count: items.length, items: items });
+}
+
+function readLatest_() {
   const sh = sheet_();
   const rows = sh.getDataRange().getValues();
   const latest = {};
@@ -37,12 +57,11 @@ function doGet(e) {
     for (let i = 0; i < n; i++) json += String(row[8 + i] || '');
     try {
       const state = JSON.parse(json);
-      const id = [row[1], row[2], row[3]].join('|');
+      const id = [String(row[1]).trim(), String(row[2]).trim(), String(row[3]).trim()].join('|');
       latest[id] = { at: row[0], state: state };   // 나중 행이 최신
     } catch (err) {}
   }
-  const items = Object.keys(latest).map(k => Object.assign({ submittedAt: latest[k].at }, latest[k].state));
-  return out_({ ok: true, count: items.length, items: items });
+  return latest;
 }
 
 function sheet_() {

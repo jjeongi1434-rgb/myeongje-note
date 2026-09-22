@@ -196,9 +196,11 @@ const hasNum=s=>/\d/.test(s);
 
 /* ================= 상태 ================= */
 let S=load()||fresh();
-function fresh(){return {v:1,student:{name:'',sid:'',cls:'',date:today()},steps:{},view:'home',cur:null,updated:''}}
-function load(){try{const j=localStorage.getItem(KEY);return j?JSON.parse(j):null}catch(e){return null}}
-function save(){S.updated=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function fresh(){return {v:1,student:{name:'',sid:'',cls:'',pin:'',date:today()},steps:{},view:'home',cur:null,updated:''}}
+let STORE=null;(function(){for(const n of ['localStorage','sessionStorage']){try{const st=window[n];st.setItem('__t','1');st.removeItem('__t');STORE=st;break}catch(e){}}})();
+const storageWeak=!STORE||STORE===window.sessionStorage;
+function load(){try{const j=(STORE||localStorage).getItem(KEY);const o=j?JSON.parse(j):null;if(o&&!o.student.pin)o.student.pin='';return o}catch(e){return null}}
+function save(){S.updated=new Date().toISOString();try{(STORE||localStorage).setItem(KEY,JSON.stringify(S))}catch(e){}}
 function st(id){return S.steps[id]||(S.steps[id]={})}
 function val(id,k){return (S.steps[id]&&S.steps[id][k])||''}
 function getP(){return val('s1','p_final')||val('s1','a')}
@@ -851,7 +853,7 @@ const SUBMIT_URL='https://script.google.com/macros/s/AKfycbyUPDl7LhANpEuPPmtvsVd
 function submitUrl(){try{return localStorage.getItem('myeongje-submit-url')||SUBMIT_URL}catch(e){return SUBMIT_URL}}
 async function submitToTeacher(){const url=submitUrl();
   if(!url){alert('아직 제출 주소가 설정되지 않았어요. “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.');return}
-  if(!S.student.name.trim()){alert('홈 화면에서 이름을 먼저 입력해 주세요.');go('home');return}
+  if(!ensureIdentity())return;
   const done=STEPS.filter(x=>st(x.id).done).length;
   const btns=[...document.querySelectorAll('button')].filter(b=>/제출/.test(b.textContent));btns.forEach(b=>b.disabled=true);
   try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({student:S.student,done,total:STEPS.length,lessons:LESSONS.filter(L=>L.steps.every(id=>st(id).done)).length,state:S})});
@@ -859,6 +861,20 @@ async function submitToTeacher(){const url=submitUrl();
     S.lastSubmit=new Date().toISOString();save();alert(`제출 완료! (${S.student.cls} ${S.student.sid} ${S.student.name}, ${done}/${STEPS.length}단계)\n수정한 뒤 다시 제출하면 최신 것으로 반영돼요.`)}
   catch(e){alert('제출에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 보세요.\n계속 안 되면 “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.')}
   finally{btns.forEach(b=>b.disabled=false)}}
+function ensureIdentity(){const st_=S.student;
+  if(!st_.name.trim()){const v=prompt('이름을 입력하세요.');if(v===null)return false;st_.name=v.trim();if(!st_.name)return false}
+  if(!st_.cls.trim()){const v=prompt('학급을 입력하세요. (예: 1학년 3반)',st_.cls);if(v===null)return false;st_.cls=v.trim()}
+  if(!st_.sid.trim()){const v=prompt('학번을 입력하세요.',st_.sid);if(v===null)return false;st_.sid=v.trim()}
+  while(!/^\d{4}$/.test(st_.pin||'')){const v=prompt('제출 비밀번호(숫자 4자리)를 정하세요. 다음 시간에 기록을 불러올 때 필요해요.',st_.pin||'');if(v===null)return false;st_.pin=v.trim()}
+  save();renderWho();return true}
+async function loadMine(){const url=submitUrl();if(!url){alert('제출 주소가 설정되지 않아 불러올 수 없어요.');return}
+  const cls=prompt('학급 (제출할 때 쓴 그대로)',S.student.cls);if(cls===null)return;const sid=prompt('학번',S.student.sid);if(sid===null)return;const name=prompt('이름',S.student.name);if(name===null)return;const pin=prompt('제출 비밀번호 (숫자 4자리)','');if(pin===null)return;
+  try{const r=await fetch(url+(url.includes('?')?'&':'?')+'cls='+encodeURIComponent(cls.trim())+'&sid='+encodeURIComponent(sid.trim())+'&name='+encodeURIComponent(name.trim())+'&pin='+encodeURIComponent(pin.trim()));const j=await r.json();
+    if(!j.ok){alert(j.error==='notfound'?'제출된 기록을 찾지 못했어요. 학급·학번·이름을 제출할 때와 똑같이 썼는지 확인해 주세요.':j.error==='pin'?'비밀번호가 맞지 않아요.':j.error==='key'?'제출함이 아직 “내 기록 불러오기”를 지원하지 않아요. 선생님께 알려 주세요. (Apps Script 새 버전 배포 필요)':'불러오기에 실패했어요. ('+(j.error||'')+')');return}
+    const mine=STEPS.filter(x=>st(x.id).done).length;const theirs=STEPS.filter(x=>(j.state.steps[x.id]||{}).done).length;
+    if(!confirm(`${name}님의 제출 기록(완료 ${theirs}단계, ${String(j.submittedAt||'').replace('T',' ').slice(0,16)})을 불러올까요?\n지금 이 기기의 기록(완료 ${mine}단계)은 덮어써져요.`))return;
+    S=j.state;S.view='home';save();render();alert('불러왔어요. “이어서 시작하기”를 누르세요.')}
+  catch(e){alert('불러오기에 실패했어요. 인터넷 연결을 확인해 주세요.')}}
 async function fetchSubmissions(){const url=submitUrl();if(!url){alert('제출 주소(SUBMIT_URL)가 설정되지 않았어요. README의 “제출 수집 설정”을 참고하세요.');return}
   const key=prompt('교사 모드 코드를 입력하세요. (Apps Script의 KEY와 같아야 해요)');if(key===null)return;
   try{const r=await fetch(url+(url.includes('?')?'&':'?')+'key='+encodeURIComponent(key.trim()));const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
@@ -908,7 +924,10 @@ function renderHome(){const s=S.student;
    <label class="field"><span class="lbl">학교·학급 <span class="small">(예: 1학년 3반)</span></span><input type="text" data-s="cls" value="${esc(s.cls)}"></label>
    <label class="field"><span class="lbl">학번</span><input type="text" data-s="sid" value="${esc(s.sid)}"></label>
    <label class="field"><span class="lbl">이름 <span class="req">*</span></span><input type="text" data-s="name" value="${esc(s.name)}"></label>
-   <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label></div></div>
+   <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label>
+   <label class="field"><span class="lbl">제출 비밀번호 (숫자 4자리) <span class="req">*</span></span><input type="text" inputmode="numeric" maxlength="4" data-s="pin" value="${esc(s.pin||'')}" placeholder="예: 0315"><small class="help">다른 기기·다음 시간에 “내 기록 불러오기”로 이어서 할 때 본인 확인용이에요. 잊지 않을 숫자로 정하세요.</small></label></div>
+   <div class="hint ${storageWeak?'warn':'info'}" style="margin-top:4px">${storageWeak?'⚠️ 이 브라우저는 기록을 오래 보관하지 못해요(카카오톡·네이버 앱 안의 브라우저이거나 시크릿 모드). <b>수업이 끝나기 전에 꼭 📤 제출</b>하고, 다음 시간에는 아래 “내 기록 불러오기”로 이어서 하세요. 가능하면 Chrome·Safari로 열어 주세요.':'💡 수업이 끊길 때는 그 자리에서 <b>📤 제출</b>을 누르세요. 다음 시간에 같은 기기면 자동으로 이어지고, 다른 기기면 아래 “내 기록 불러오기”로 이어서 할 수 있어요.'}</div>
+   <p style="margin:10px 0 0"><button class="btn sm" onclick="loadMine()">📥 내 기록 불러오기 (제출한 기록에서)</button> ${S.lastSubmit?`<span class="small">마지막 제출: ${esc(S.lastSubmit.replace('T',' ').slice(0,16))}</span>`:''}</p></div>
   <div class="card"><h3>차시별 학습 계획</h3><div style="overflow:auto"><table class="lessons"><tr><th style="width:52px">차시</th><th>주제 · 학습 목표</th><th style="width:38%">활동 화면</th><th style="width:64px">상태</th></tr>
   ${LESSONS.map(L=>{const ls=lessonStatus(L);return `<tr><td class="ln">${L.n}</td><td><b>${esc(L.title)}</b><div class="small">${esc(L.goal)}</div></td><td>${L.steps.map(id=>{const x=STEPS.find(z=>z.id===id);const i=STEPS.indexOf(x);const ss=stepStatus(x);return `<button class="lstep ${ss}" onclick="go('step','${id}')">${i+1}. ${esc(x.title)}</button>`}).join('')}</td><td>${ls==='done'?'<span class="pill ok">완료</span>':ls==='started'?'<span class="pill todo">진행 중</span>':''}</td></tr>`}).join('')}</table></div>
   <p style="margin-top:14px"><button class="btn primary" onclick="go('step','${(STEPS.find(x=>!st(x.id).done)||STEPS[0]).id}')">▶ 이어서 시작하기</button> <button class="btn" onclick="resetAll()">처음부터 다시</button></p></div>
