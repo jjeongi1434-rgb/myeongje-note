@@ -225,7 +225,7 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
 <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
 <input type="file" id="fileMulti" accept=".json,application/json" multiple style="display:none">
 <script src="https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<script src="qrcode.min.js" defer onerror="this.onerror=null;var t=document.createElement('script');t.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';t.defer=true;document.head.appendChild(t)"></script>
 <script>
 /* ================= 유틸 ================= */
 const KEY='myeongje-note-v1';
@@ -1237,6 +1237,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
+const APPVER='2026-09-29b';
 const STUURL=location.origin+location.pathname;
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
@@ -1265,13 +1266,18 @@ function showStudent(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x
   $('#tview').innerHTML=`<div class="noprint" style="margin:14px 0 6px"><button class="btn sm" onclick="window.print()">🖨 인쇄</button> <button class="btn sm" onclick="exportDocx(SUB('${clsId}','${no}'))">📝 Word</button> <button class="btn sm" onclick="$('#tview').innerHTML=''">닫기</button></div>`+reportHTML(x);
   $('#tview').scrollIntoView({behavior:'smooth'})}
 function SUB(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x.no===no);return findSub(clsId,no,t.name)}
-function drawQR(){const el=$('#qr');if(!el)return;el.innerHTML='';
-  if(typeof QRCode==='undefined'){el.innerHTML='<span class="small">QR 생성기를 불러오지 못했어요(인터넷 확인). 아래 주소를 직접 알려 주세요.</span>';return}
-  new QRCode(el,{text:STUURL,width:190,height:190,correctLevel:QRCode.CorrectLevel.M})}
+function drawQR(tries){const el=$('#qr');if(!el)return;
+  if(typeof QRCode==='undefined'){if((tries||0)<25){el.innerHTML='<span class="small">QR 만드는 중…</span>';setTimeout(()=>drawQR((tries||0)+1),300);return}
+    el.innerHTML='<div class="small" style="max-width:200px">QR을 만들지 못했어요. 아래 주소를 칠판에 적어 주세요.<br><button class="btn sm" style="margin-top:6px" onclick="drawQR(0)">다시 시도</button></div>';return}
+  el.innerHTML='';try{new QRCode(el,{text:STUURL,width:190,height:190,correctLevel:QRCode.CorrectLevel.M})}catch(e){el.innerHTML='<span class="small">QR 오류: '+esc(e.message)+'</span>'}}
+function qrBig(){const w=window.open('','_blank','width=520,height=640');if(!w){alert('팝업이 차단되었어요. 브라우저에서 팝업을 허용해 주세요.');return}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
 function autoRefresh(on){if(BTIMER){clearInterval(BTIMER);BTIMER=null}if(on)BTIMER=setInterval(()=>fetchSubmissions(true),60000);render()}
 function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🏫 교사 보드</h3>
   <div class="qrbox">
-    <div class="qrwrap"><div id="qr"></div><div class="lk">${esc(STUURL)}</div></div>
+    <div class="qrwrap"><div id="qr"></div><div class="lk">${esc(STUURL)}</div>
+      <p style="margin:8px 0 0"><button class="btn sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(STUURL).then(()=>alert('학생용 주소를 복사했어요.'),()=>prompt('주소를 복사하세요',STUURL))||prompt('주소를 복사하세요',STUURL)">📋 주소 복사</button>
+      <button class="btn sm" onclick="qrBig()">🔍 QR 크게</button></p></div>
     <div style="flex:1;min-width:230px">
       <p class="small" style="margin:0 0 8px">학생들에게 이 QR을 보여 주면 카메라로 찍어 바로 들어올 수 있어요.</p>
       <p><label class="lbl" style="font-size:13px">학급 보기</label>
@@ -1284,8 +1290,10 @@ function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🏫 교�
   <div class="card noprint">${boardHTML()}</div>
   <div class="card noprint"><h3>📄 전체 기록</h3><p><button class="btn sm" onclick="printAll()">🖨 전체 보고서 인쇄</button> <button class="btn sm" onclick="exportCSV()">📊 CSV 내려받기</button> <button class="btn sm" onclick="window.open('${esc(SHEET_URL)}','_blank')">📊 구글 시트 열기</button></p></div>
   <div id="tview"></div>
+  <p class="small" style="text-align:right;margin:0 4px">화면 버전 ${APPVER}</p>
   <details class="card noprint"><summary><b>⚙️ 설정 · 파일로 모으기 · 교사 모드</b></summary>
   <p class="small" style="margin-top:10px">${isTeacher()?'교사 모드가 <b>켜져</b> 있어요. 각 단계 끝에 <b>교과서 문제</b>가 표시되고, 학생 정보 없이 모든 화면을 둘러볼 수 있어요.':'교과서 문제 세트와 전체 둘러보기는 교사 모드에서만 가능해요.'}</p>
+  <p><button class="btn sm primary" onclick="fetchSubmissions()">📥 제출함에서 불러오기 (새로고침)</button></p>
   <p>${isTeacher()?`<button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button>`:`<button class="btn sm primary" onclick="enterTeacher()">교사 모드 켜기</button>`}
    <button class="btn sm" onclick="const u=prompt('제출 주소(Apps Script 웹 앱 URL)',submitUrl());if(u===null)return;try{u.trim()?localStorage.setItem('myeongje-submit-url',u.trim()):localStorage.removeItem('myeongje-submit-url')}catch(e){}render()">제출 주소 설정</button></p>
   <p class="small" style="margin-top:10px">학생이 “저장”으로 내려받은 JSON 파일을 올려서 합칠 수도 있어요.</p>
