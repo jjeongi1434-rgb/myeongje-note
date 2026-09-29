@@ -85,7 +85,11 @@ main{padding:24px 28px 120px;max-width:920px;width:100%;margin:0 auto}
 .practice .q{font-weight:500;white-space:pre-wrap}
 .practice .a{display:none;margin-top:8px;background:var(--ok-soft);border-radius:8px;padding:10px 12px;white-space:pre-wrap;font-size:14.5px}
 .practice.open .a{display:block}
-.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chips{display:none;flex-wrap:wrap;gap:5px;margin:6px 0 2px}
+.field.chipon .chips{display:flex}
+.chiptoggle{border:1px dashed #b8bfd6;background:#fafbfe;color:var(--brand);border-radius:8px;padding:5px 10px;font-size:13px;margin-top:6px}
+.chiptoggle:hover{background:var(--brand-soft);border-style:solid}
+.field.chipon .chiptoggle{background:var(--brand-soft);border-style:solid}
 .chip{border:1px solid #cfd4e2;background:#fff;border-radius:8px;padding:6px 11px;font-size:15px;line-height:1.1;min-width:36px}
 .chip:hover{background:var(--brand-soft);border-color:var(--brand)}
 .chip.wd{font-size:14px}
@@ -214,6 +218,18 @@ const U10=RANGE(1,10),U15=RANGE(1,15),U5=RANGE(1,5),U6=RANGE(1,6),Z5=RANGE(-5,5)
 const SETCHIPS=[{t:'{ }',ins:'{}'},{t:'{x | }',ins:'{x | }'},{t:'x'},{t:','},{t:'|'},{t:'∅'},{t:'{'},{t:'}'},
  {t:'0'},{t:'1'},{t:'2'},{t:'3'},{t:'4'},{t:'5'},{t:'6'},{t:'7'},{t:'8'},{t:'9'},{t:'−',ins:'-'},
  {t:'='},{t:'≠'},{t:'<'},{t:'>'},{t:'≤'},{t:'≥'},{t:'²'},{t:'또는',ins:' 또는 '},{t:'그리고',ins:' 그리고 '},{t:'공백',ins:' '}];
+const NUMC=['0','1','2','3','4','5','6','7','8','9'].map(t=>({t}));
+const CMPC=[{t:'='},{t:'≠'},{t:'<'},{t:'>'},{t:'≤'},{t:'≥'}];
+/* 식 쓰기용 */
+const MATHCHIPS=[{t:'x'},{t:'y'},{t:'n'},{t:'a'},{t:'b'},...NUMC,{t:'−',ins:'-'},{t:'+'},{t:'×'},{t:'÷'},...CMPC,{t:'²'},{t:'³'},{t:'√'},{t:'( )',ins:'()'},{t:'| |',ins:'||'},{t:'공백',ins:' '}];
+/* 문장 쓰기용 (식 + 자주 쓰는 말) */
+const SENTCHIPS=[...MATHCHIPS,{t:'이다',ins:'이다'},{t:'가 아니다',ins:'가 아니다'},{t:'그리고',ins:' 그리고 '},{t:'또는',ins:' 또는 '}];
+/* ‘모든’·‘어떤’ 문장용 */
+const QUANTCHIPS=[{t:'모든',ins:'모든 '},{t:'어떤',ins:'어떤 '},{t:'실수 x에 대하여',ins:'실수 x에 대하여 '},{t:'자연수 x에 대하여',ins:'자연수 x에 대하여 '},{t:'이다',ins:'이다.'},...MATHCHIPS,{t:'그리고',ins:' 그리고 '},{t:'또는',ins:' 또는 '}];
+/* p → q 꼴 문장용 */
+const IMPCHIPS=[{t:'이면',ins:'이면 '},{t:'이다',ins:'이다.'},{t:'가 아니면',ins:'가 아니면 '},{t:'가 아니다',ins:'가 아니다.'},...MATHCHIPS,{t:'그리고',ins:' 그리고 '},{t:'또는',ins:' 또는 '}];
+/* 포함 관계·조건 설명용 */
+const INCCHIPS=[{t:'P'},{t:'Q'},{t:'⊂'},{t:'⊄'},{t:'='},{t:'≠'},{t:'∅'},{t:'⇒'},{t:'⇔'},{t:'Pᶜ',ins:'Pᶜ'},{t:'Qᶜ',ins:'Qᶜ'},{t:'∪'},{t:'∩'},{t:'{ }',ins:'{}'},...NUMC,{t:'−',ins:'-'},{t:','},{t:'공백',ins:' '}];
 const UCHIPS=[{t:'실수 전체',set:'실수 전체'},{t:'자연수 전체',set:'자연수 전체'},{t:'정수 전체',set:'정수 전체'},
  {t:'{1, 2, …, 10}',set:'{x | x는 10 이하의 자연수}'},{t:'{1, 2, …, 15}',set:'{x | x는 15 이하의 자연수}'}];
 const hasVar=s=>/[a-zA-Z]/.test(s);
@@ -240,7 +256,7 @@ const STEPS=[
  <p>먼저 문장을 하나 만들어 보세요. 그리고 생각해 봅시다. <b>이 문장은 명제인가요?</b> 아니면 질문, 명령, 감탄, 혹은 모호하거나 불완전한 문장인가요? <b>‘조건’</b>일 수도 있어요. 왜 그렇게 생각했는지도 함께 적어 주세요.</p>
  <p class="ex">예: “2는 짝수이다”, “x+3=7”, “오늘 날씨 참 좋다!” 같은 문장을 떠올려 보세요.</p>`,
  draft:[
-  {k:'a',label:'내가 만든 문장',type:'text',req:1,ph:'예: 3은 소수이다'},
+  {k:'a',label:'내가 만든 문장',type:'text',chips:SENTCHIPS,req:1,ph:'예: 3은 소수이다'},
   {k:'a_type',label:'이 문장은?',type:'radio',opts:['명제','조건','명제 아님'],req:1},
   {k:'a_why',label:'그렇게 생각한 이유',type:'textarea',req:1,ph:'참·거짓을 분명히 판별할 수 있나요? 변수가 있나요? 질문·명령·감탄은 아닌가요?'},
  ],
@@ -257,7 +273,7 @@ const STEPS=[
  checklist:['이 문장은 사람에 따라 판단이 달라지지 않고, 참·거짓이 딱 하나로 정해지는가?','문자(변수)가 있다면, 그 값에 따라 참·거짓이 바뀌는가? → 그렇다면 조건','질문(?)·명령·감탄·느낌 표현은 아닌가?','거짓인 문장도 “명제”라는 것을 알고 판단했는가?'],
  revise:[
   {k:'fix',label:'판정 기준을 본 뒤 수정한 판단과 이유',type:'textarea',req:1,ph:'예: 조건이라고 했는데, 변수가 없고 참·거짓이 분명하므로 명제(거짓)이다. / 수정 없음 — 이유: …'},
-  {k:'p_final',label:'2·3단계에서 사용할 나의 명제 p (변수 없이 참·거짓이 정해지는 문장)',type:'text',req:1,ph:'예: 3은 소수이다  /  15는 4의 배수이다',help:'내가 만든 문장이 명제이면 그대로 쓰고, 조건이나 명제가 아니었다면 명제로 고쳐 쓰세요. 2단계에서 이 명제의 참·거짓을 판단합니다.'},
+  {k:'p_final',label:'2·3단계에서 사용할 나의 명제 p (변수 없이 참·거짓이 정해지는 문장)',type:'text',chips:SENTCHIPS,req:1,ph:'예: 3은 소수이다  /  15는 4의 배수이다',help:'내가 만든 문장이 명제이면 그대로 쓰고, 조건이나 명제가 아니었다면 명제로 고쳐 쓰세요. 2단계에서 이 명제의 참·거짓을 판단합니다.'},
   {k:'criteria',label:'명제 / 조건 / 명제 아님을 판별하는 나만의 기준',type:'textarea',req:1,rows:2,ph:'판정 기준과 힌트를 읽고, 내 말로 정리해 보세요.'},
  ],
  practice:[{q:'다음 문장을 명제 / 조건 / 명제 아님으로 분류해 보세요.\n① 3은 소수이다  ② x+1=5  ③ 수학은 재미있다  ④ 12는 5의 배수이다  ⑤ 창문을 닫아라',
@@ -282,7 +298,7 @@ const STEPS=[
  <p class="ex">참이라면 “왜 항상 성립하는지”를 정의·성질·계산으로, 거짓이라면 “성립하지 않는 구체적인 예(반례)” 하나를 보여 주면 돼요.</p>`,
  draft:[
   {k:'tf',label:'나의 판단',type:'radio',opts:TF,req:1},
-  {k:'why',label:'근거 (정의 · 계산 · 반례)',type:'textarea',req:1,ph:'예: 3의 약수는 1과 3뿐이므로 소수이다. / 15÷4=3…3이므로 4의 배수가 아니다.'},
+  {k:'why',label:'근거 (정의 · 계산 · 반례)',type:'textarea',chips:MATHCHIPS,req:1,ph:'예: 3의 약수는 1과 3뿐이므로 소수이다. / 15÷4=3…3이므로 4의 배수가 아니다.'},
  ],
  reveal:()=>`<table><tr><th style="width:90px">판단</th><th>필요한 근거</th></tr>
  <tr><td><b>참</b></td><td>정의·성질·연산을 바탕으로 “항상 성립함”을 보인다. (예: 소수의 정의, 배수의 정의, 부등식의 성질)</td></tr>
@@ -297,7 +313,7 @@ const STEPS=[
  checklist:['근거에 정의(약수·배수·소수·짝수…)나 계산이 들어 있는가?','거짓이라면 반례를 구체적인 값으로 제시했는가?','“당연하다”, “~인 것 같다” 같은 표현 대신 수학적 근거를 썼는가?'],
  revise:[
   {k:'tf2',label:'최종 판단',type:'radio',opts:TF,req:1},
-  {k:'why2',label:'보완한 근거',type:'textarea',req:1,ph:'판정 기준과 체크리스트를 보고 근거를 다듬어 보세요.'},
+  {k:'why2',label:'보완한 근거',type:'textarea',chips:MATHCHIPS,req:1,ph:'판정 기준과 체크리스트를 보고 근거를 다듬어 보세요.'},
   {k:'criteria',label:'참 / 거짓을 판별하는 나만의 기준',type:'textarea',req:1,rows:2,ph:'예: 거짓은 반례 하나, 참은 정의나 계산으로 항상 성립함을 보인다.'},
  ],
  practice:[{q:'명제 “모든 소수는 홀수이다”는 참일까요, 거짓일까요? 근거를 써 보세요.',a:'거짓. 반례: 2는 소수이지만 짝수이다. (반례 하나면 충분!)'},
@@ -317,7 +333,7 @@ const STEPS=[
  <p class="ex">예: ‘2는 짝수이다’ → ‘2는 짝수가 아니다’ &nbsp;/&nbsp; ‘x≥3’ → ‘x&lt;3’</p>
  <p>부정문을 직접 써 보고, 이 부정문이 참인지 거짓인지 스스로 판단해 보세요. 그리고 그 이유도 함께 적어 보세요.</p>`,
  draft:[
-  {k:'neg',label:'¬p (p의 부정)',type:'text',req:1,ph:'예: 3은 소수가 아니다'},
+  {k:'neg',label:'¬p (p의 부정)',type:'text',chips:SENTCHIPS,req:1,ph:'예: 3은 소수가 아니다'},
   {k:'tf',label:'¬p의 참·거짓',type:'radio',opts:TF,req:1},
   {k:'why',label:'이유',type:'textarea',req:1,ph:'p의 참·거짓과 비교해서 설명해 보세요.'},
  ],
@@ -340,7 +356,7 @@ const STEPS=[
    return h},
  checklist:['p와 ¬p의 참·거짓이 서로 반대인가?','부등호(>, ≥ 등)가 있다면 등호 포함 여부까지 정확히 바꿨는가?','“=”은 “≠”로, “이다”는 “아니다”로 정확히 바꿨는가?','¬p를 다시 부정하면 p로 돌아오는가?'],
  revise:[
-  {k:'neg2',label:'수정한 ¬p',type:'text',req:1},
+  {k:'neg2',label:'수정한 ¬p',type:'text',chips:SENTCHIPS,req:1},
   {k:'tf2',label:'¬p의 최종 참·거짓',type:'radio',opts:TF,req:1},
  ],
  practice:[{q:'다음의 부정을 쓰고 참·거짓을 판단하세요.\n① 4는 3의 배수이다  ② (조건) x ≥ 1  ③ 2 + 3 = 5',
@@ -365,7 +381,7 @@ const STEPS=[
   {k:'cond',label:'조건 p(x)',type:'tokens',req:1,ph:'예: x² ≥ 4'},
   {k:'P',label:'p의 진리집합 P',type:'tokens',req:1,ph:'예: {x | x ≤ −2 또는 x ≥ 2}  /  {1, 2, 3, 6}'},
   {k:'Pc',label:'¬p의 진리집합',type:'tokens',req:1,ph:'예: {x | −2 < x < 2}'},
-  {k:'why',label:'어떻게 구했나요? (풀이 과정)',type:'textarea',req:1},
+  {k:'why',label:'어떻게 구했나요? (풀이 과정)',type:'textarea',chips:SETCHIPS,req:1},
  ],
  reveal:()=>`<ul><li><b>진리집합</b>: 전체집합 U의 원소 중 조건 p(x)를 참이 되게 하는 모든 x의 집합. 보통 P로 나타내요.</li>
  <li><b>¬p의 진리집합 = Pᶜ</b> (P의 여집합). 그래서 P ∪ Pᶜ = U, P ∩ Pᶜ = ∅.</li>
@@ -410,15 +426,15 @@ const STEPS=[
  <p>② 그 조건 앞에 <b>‘모든’</b>을 붙인 문장을 쓰고 참·거짓과 근거를, ③ <b>‘어떤’</b>을 붙인 문장을 쓰고 참·거짓과 예시를 적어 보세요.</p>
  <p>④ 마지막으로 두 문장의 <b>부정</b>을 각각 써 보세요. ‘모든’과 ‘어떤’이 부정에서 서로 어떻게 바뀌는지, 그리고 조건 안의 <b>“그리고 / 또는”</b>은 어떻게 바뀌는지가 이번 단계의 핵심이에요.</p>`,
  draft:[
-  {k:'cond',label:'나의 조건 p(x) + 변수의 범위',type:'text',req:1,copy:'s5.cond',ph:'예: x² ≥ x  (x는 실수)'},
-  {k:'all_s',label:'‘모든’을 붙인 문장',type:'text',req:1,ph:'예: 모든 실수 x에 대하여 x² ≥ x이다.'},
+  {k:'cond',label:'나의 조건 p(x) + 변수의 범위',type:'text',chips:MATHCHIPS,req:1,copy:'s5.cond',ph:'예: x² ≥ x  (x는 실수)'},
+  {k:'all_s',label:'‘모든’을 붙인 문장',type:'text',chips:QUANTCHIPS,req:1,ph:'예: 모든 실수 x에 대하여 x² ≥ x이다.'},
   {k:'all_tf',label:'참·거짓',type:'radio',opts:TF,req:1},
-  {k:'all_why',label:'근거 (참: 왜 항상 성립? / 거짓: 반례 값)',type:'textarea',req:1},
-  {k:'some_s',label:'‘어떤’을 붙인 문장',type:'text',req:1,ph:'예: 어떤 실수 x에 대하여 x² ≥ x이다.'},
+  {k:'all_why',label:'근거 (참: 왜 항상 성립? / 거짓: 반례 값)',type:'textarea',chips:MATHCHIPS,req:1},
+  {k:'some_s',label:'‘어떤’을 붙인 문장',type:'text',chips:QUANTCHIPS,req:1,ph:'예: 어떤 실수 x에 대하여 x² ≥ x이다.'},
   {k:'some_tf',label:'참·거짓',type:'radio',opts:TF,req:1},
-  {k:'some_why',label:'근거 (참: 성립하는 예시 값 / 거짓: 왜 하나도 없나?)',type:'textarea',req:1},
-  {k:'neg_all',label:'‘모든’ 문장의 부정',type:'text',req:1,ph:'예: 어떤 실수 x에 대하여 x² < x이다.'},
-  {k:'neg_some',label:'‘어떤’ 문장의 부정',type:'text',req:1,ph:'예: 모든 실수 x에 대하여 x² < x이다.'},
+  {k:'some_why',label:'근거 (참: 성립하는 예시 값 / 거짓: 왜 하나도 없나?)',type:'textarea',chips:MATHCHIPS,req:1},
+  {k:'neg_all',label:'‘모든’ 문장의 부정',type:'text',chips:QUANTCHIPS,req:1,ph:'예: 어떤 실수 x에 대하여 x² < x이다.'},
+  {k:'neg_some',label:'‘어떤’ 문장의 부정',type:'text',chips:QUANTCHIPS,req:1,ph:'예: 모든 실수 x에 대하여 x² < x이다.'},
  ],
  reveal:()=>`<table><tr><th style="width:150px">명제</th><th>참이 되려면</th><th>거짓이 되려면</th></tr>
  <tr><td><b>모든 x에 대하여 p(x)</b><br><span class="small">(전칭 명제, ∀)</span></td><td>범위 안의 <b>모든</b> x에서 p(x)가 성립</td><td><b>반례 하나</b>만 있으면 됨</td></tr>
@@ -497,23 +513,23 @@ const STEPS=[
   {q:'(교과서 개념 확인) 명제 “어떤 실수 x에 대하여 x² > 1이다.”의 부정 “모든 실수 x에 대하여 x² ≤ 1이다.”는 (참, 거짓)',a:'거짓'}]}],
  draft:[
   {k:'h1',label:'▣ 명제가 되는 문장 작성 → 참/거짓 판정 → 부정문 작성 → 부정의 참/거짓 판정',type:'head'},
-  {k:'r1_s',label:'하나의 문장 (p)',type:'text',req:1},
+  {k:'r1_s',label:'하나의 문장 (p)',type:'text',chips:SENTCHIPS,req:1},
   {k:'r1_tf',label:'p의 참/거짓',type:'radio',opts:TF,req:1},
-  {k:'r1_neg',label:'p의 부정문',type:'text',req:1},
+  {k:'r1_neg',label:'p의 부정문',type:'text',chips:SENTCHIPS,req:1},
   {k:'r1_ntf',label:'부정문의 참/거짓',type:'radio',opts:TF,req:1},
-  {k:'r2_s',label:'‘모든’을 넣은 문장',type:'text',req:1},
+  {k:'r2_s',label:'‘모든’을 넣은 문장',type:'text',chips:QUANTCHIPS,req:1},
   {k:'r2_tf',label:'참/거짓',type:'radio',opts:TF,req:1},
-  {k:'r2_neg',label:'부정문',type:'text',req:1},
+  {k:'r2_neg',label:'부정문',type:'text',chips:QUANTCHIPS,req:1},
   {k:'r2_ntf',label:'부정문의 참/거짓',type:'radio',opts:TF,req:1},
-  {k:'r3_s',label:'‘어떤’을 넣은 문장',type:'text',req:1},
+  {k:'r3_s',label:'‘어떤’을 넣은 문장',type:'text',chips:QUANTCHIPS,req:1},
   {k:'r3_tf',label:'참/거짓',type:'radio',opts:TF,req:1},
-  {k:'r3_neg',label:'부정문',type:'text',req:1},
+  {k:'r3_neg',label:'부정문',type:'text',chips:QUANTCHIPS,req:1},
   {k:'r3_ntf',label:'부정문의 참/거짓',type:'radio',opts:TF,req:1},
   {k:'h2',label:'▣ 진리집합 표현하기',type:'head'},
-  {k:'U',label:'전체집합 정하기 (U)',type:'text',req:1},
-  {k:'cond',label:'조건 p(x)',type:'text',req:1},
-  {k:'P',label:'p(x)의 진리집합',type:'text',req:1},
-  {k:'Pc',label:'~p(x)의 진리집합',type:'text',req:1},
+  {k:'U',label:'전체집합 정하기 (U)',type:'text',chips:UCHIPS,req:1},
+  {k:'cond',label:'조건 p(x)',type:'text',chips:MATHCHIPS,req:1},
+  {k:'P',label:'p(x)의 진리집합',type:'text',chips:SETCHIPS,req:1},
+  {k:'Pc',label:'~p(x)의 진리집합',type:'text',chips:SETCHIPS,req:1},
   {k:'h3',label:'▣ 나만의 판별 기준 (수업 후 최종 정리)',type:'head'},
   {k:'crit1',label:'명제 / 조건 / 명제 아님을 판별하는 기준',type:'textarea',req:1,rows:2,copy:'s1.criteria'},
   {k:'crit2',label:'참 / 거짓을 판별하는 기준',type:'textarea',req:1,rows:2,copy:'s2.criteria'},
@@ -544,14 +560,14 @@ const STEPS=[
  <p>① 전체집합 U와 두 조건 p, q를 정하고, ② “p이면 q이다” 문장을 쓴 뒤, ③ 참·거짓과 근거를 적어 보세요. ④ 그리고 두 조건의 진리집합 P, Q를 구해 <b>포함 관계</b>를 살펴보세요.</p>
  <p class="ex">예: U = 실수, p: x = 2, q: x² = 4 → “x = 2이면 x² = 4이다.”<br>5단계의 조건을 p로 가져와도 좋아요.</p>`,
  draft:[
-  {k:'U',label:'전체집합 U',type:'text',req:1,copy:'s5.U'},
-  {k:'p',label:'조건 p (가정)',type:'text',req:1,copy:'s5.cond'},
-  {k:'q',label:'조건 q (결론)',type:'text',req:1,ph:'예: x² = 4'},
-  {k:'imp',label:'명제 “p이면 q이다”',type:'text',req:1,ph:'예: x = 2이면 x² = 4이다.'},
+  {k:'U',label:'전체집합 U',type:'text',chips:UCHIPS,req:1,copy:'s5.U'},
+  {k:'p',label:'조건 p (가정)',type:'text',chips:MATHCHIPS,req:1,copy:'s5.cond'},
+  {k:'q',label:'조건 q (결론)',type:'text',chips:MATHCHIPS,req:1,ph:'예: x² = 4'},
+  {k:'imp',label:'명제 “p이면 q이다”',type:'text',chips:IMPCHIPS,req:1,ph:'예: x = 2이면 x² = 4이다.'},
   {k:'tf',label:'p → q의 참·거짓',type:'radio',opts:TF,req:1},
   {k:'why',label:'근거 (참: 왜 p인 모든 x가 q를 만족? / 거짓: p는 만족하지만 q는 만족하지 않는 반례)',type:'textarea',req:1},
-  {k:'P',label:'p의 진리집합 P',type:'text',req:1},
-  {k:'Q',label:'q의 진리집합 Q',type:'text',req:1},
+  {k:'P',label:'p의 진리집합 P',type:'text',chips:SETCHIPS,req:1},
+  {k:'Q',label:'q의 진리집합 Q',type:'text',chips:SETCHIPS,req:1},
   {k:'incl',label:'P와 Q의 포함 관계',type:'radio',opts:['P ⊂ Q','Q ⊂ P','P = Q','어느 쪽도 포함되지 않음'],req:1},
  ],
  reveal:()=>`<div class="key">🔑 명제 p → q가 참 ⟺ <b>P ⊂ Q</b> &nbsp;(p를 만족하는 모든 x가 q도 만족)<br>
@@ -603,12 +619,12 @@ const STEPS=[
  <p>명제 p → q에 대하여</p><ul><li><b>역</b>: q → p &nbsp;(가정과 결론을 바꿈)</li><li><b>대우</b>: ¬q → ¬p &nbsp;(가정과 결론을 바꾸고 각각 부정)</li></ul>
  <p>나의 명제의 역과 대우를 문장으로 쓰고, 각각 참·거짓을 근거와 함께 판단해 보세요. 그리고 <b>원래 명제의 참·거짓과 비교</b>해 보세요.</p>`,
  draft:[
-  {k:'conv',label:'역 (q → p)',type:'text',req:1,ph:'예: x² = 4이면 x = 2이다.'},
+  {k:'conv',label:'역 (q → p)',type:'text',chips:IMPCHIPS,req:1,ph:'예: x² = 4이면 x = 2이다.'},
   {k:'conv_tf',label:'역의 참·거짓',type:'radio',opts:TF,req:1},
-  {k:'conv_why',label:'근거 (반례 또는 이유)',type:'textarea',req:1},
-  {k:'contra',label:'대우 (¬q → ¬p)',type:'text',req:1,ph:'예: x² ≠ 4이면 x ≠ 2이다.'},
+  {k:'conv_why',label:'근거 (반례 또는 이유)',type:'textarea',chips:MATHCHIPS,req:1},
+  {k:'contra',label:'대우 (¬q → ¬p)',type:'text',chips:IMPCHIPS,req:1,ph:'예: x² ≠ 4이면 x ≠ 2이다.'},
   {k:'contra_tf',label:'대우의 참·거짓',type:'radio',opts:TF,req:1},
-  {k:'contra_why',label:'근거',type:'textarea',req:1},
+  {k:'contra_why',label:'근거',type:'textarea',chips:MATHCHIPS,req:1},
   {k:'compare',label:'원래 명제 · 역 · 대우의 참·거짓을 비교하면 어떤 규칙이 보이나요?',type:'textarea',req:1},
  ],
  reveal:()=>`<table><tr><th>명제</th><th>기호</th><th>진리집합으로</th></tr>
@@ -671,10 +687,10 @@ const STEPS=[
  <p>개념정리 ①·②에서의 판단을 바탕으로, 나의 p는 q이기 위한 어떤 조건인지 판단하고 <b>진리집합의 포함 관계로</b> 설명해 보세요. 그리고 필요충분조건이 되는 두 조건 쌍을 하나 새로 만들어 보세요.</p>`,
  draft:[
   {k:'rel',label:'p는 q이기 위한',type:'radio',opts:['충분조건 (필요조건은 아님)','필요조건 (충분조건은 아님)','필요충분조건','충분조건도 필요조건도 아님'],req:1},
-  {k:'why',label:'근거 (P와 Q의 포함 관계로 설명)',type:'textarea',req:1,ph:'예: P = {2} ⊂ Q = {-2, 2}이므로 p ⇒ q. 하지만 Q ⊄ P이므로 q ⇒ p는 아님. 따라서 p는 충분조건.'},
-  {k:'ex_p',label:'새로 만든 조건 p′ (p′ ⇔ q′가 되도록)',type:'text',req:1,ph:'예: x = 0'},
-  {k:'ex_q',label:'새로 만든 조건 q′',type:'text',req:1,ph:'예: x² = 0'},
-  {k:'ex_why',label:'p′와 q′가 필요충분조건인 이유 (P′ = Q′ 확인)',type:'textarea',req:1},
+  {k:'why',label:'근거 (P와 Q의 포함 관계로 설명)',type:'textarea',chips:INCCHIPS,req:1,ph:'예: P = {2} ⊂ Q = {-2, 2}이므로 p ⇒ q. 하지만 Q ⊄ P이므로 q ⇒ p는 아님. 따라서 p는 충분조건.'},
+  {k:'ex_p',label:'새로 만든 조건 p′ (p′ ⇔ q′가 되도록)',type:'text',chips:MATHCHIPS,req:1,ph:'예: x = 0'},
+  {k:'ex_q',label:'새로 만든 조건 q′',type:'text',chips:MATHCHIPS,req:1,ph:'예: x² = 0'},
+  {k:'ex_why',label:'p′와 q′가 필요충분조건인 이유 (P′ = Q′ 확인)',type:'textarea',chips:INCCHIPS,req:1},
  ],
  reveal:()=>`<table><tr><th>p → q</th><th>q → p</th><th>p는 q이기 위한</th><th>진리집합</th></tr>
  <tr><td>참</td><td>거짓</td><td><b>충분조건</b> (p ⇒ q)</td><td>P ⊂ Q, P ≠ Q</td></tr>
@@ -727,10 +743,10 @@ const STEPS=[
     '두 홀수의 합은 짝수이다.',
     '두 자연수 m, n에 대하여, mn이 짝수이면 m 또는 n이 짝수이다.',
     '√3은 유리수가 아니다.']},
-  {k:'defs',label:'증명에 사용할 용어의 정의',type:'textarea',req:1,rows:2,ph:'예: 짝수 — 2k (k는 정수) 꼴의 정수 / 홀수 — 2k + 1 꼴의 정수 / 유리수 — 두 정수의 비 n/m (m ≠ 0)으로 나타낼 수 있는 수 / 서로소 — 최대공약수가 1'},
+  {k:'defs',label:'증명에 사용할 용어의 정의',type:'textarea',chips:MATHCHIPS,req:1,rows:2,ph:'예: 짝수 — 2k (k는 정수) 꼴의 정수 / 홀수 — 2k + 1 꼴의 정수 / 유리수 — 두 정수의 비 n/m (m ≠ 0)으로 나타낼 수 있는 수 / 서로소 — 최대공약수가 1'},
   {k:'method',label:'증명 방법',type:'radio',opts:['직접 증명','대우를 이용한 증명','귀류법'],req:1},
   {k:'method_why',label:'왜 이 방법을 골랐나요?',type:'textarea',req:1,ph:'예: 결론 “n은 짝수”에서 시작하기 어렵고, 결론의 부정 “n은 홀수”에서 출발하면 n = 2k+1로 계산할 수 있으므로 대우를 이용한다.'},
-  {k:'proof',label:'증명 초안',type:'textarea',req:1,rows:7,ph:'[가정] … [보이려는 것] … 단계별로 “왜냐하면 / 따라서”를 써 가며 전개해 보세요.'},
+  {k:'proof',label:'증명 초안',type:'textarea',chips:MATHCHIPS,req:1,rows:7,ph:'[가정] … [보이려는 것] … 단계별로 “왜냐하면 / 따라서”를 써 가며 전개해 보세요.'},
  ],
  reveal:()=>{const sel=val('s9','prop');const bank={
  '자연수 n에 대하여, n²이 짝수이면 n은 짝수이다.':'【대우를 이용한 증명】 대우: n이 홀수이면 n²은 홀수이다.\nn이 홀수이면 n = 2k + 1 (k는 0 이상의 정수)로 쓸 수 있다.\nn² = (2k+1)² = 4k² + 4k + 1 = 2(2k² + 2k) + 1 이므로 n²은 홀수이다.\n따라서 대우가 참이므로 원래 명제도 참이다.',
@@ -757,7 +773,7 @@ const STEPS=[
    return h},
  checklist:['사용한 용어(짝수·홀수·유리수·서로소 등)의 정의를 정확히 썼는가?','무엇을 가정했는지 첫 줄에 썼는가?','문자를 도입했다면 그 범위(정수, 자연수 등)를 밝혔는가?','각 단계에 근거(정의·계산)가 있고 “따라서”로 이어지는가?','대우/귀류법이라면 마무리 문장(“대우가 참이므로…”, “모순이므로…”)을 썼는가?'],
  revise:[
-  {k:'proof2',label:'다듬은 증명 (최종)',type:'textarea',req:1,rows:8},
+  {k:'proof2',label:'다듬은 증명 (최종)',type:'textarea',chips:MATHCHIPS,req:1,rows:8},
   {k:'reflect',label:'증명을 쓰면서 어려웠던 점, 새로 알게 된 점',type:'textarea',req:1,rows:2},
  ],
  practice:[{q:'“자연수 n에 대하여 n²이 홀수이면 n은 홀수이다”를 어떤 방법으로 증명하는 것이 좋을까요? 대우를 써 보세요.',a:'대우: “n이 짝수이면 n²은 짝수이다.” n = 2k → n² = 4k² = 2(2k²) 짝수. 대우가 참이므로 원명제 참. (결론의 부정 “n은 짝수”가 다루기 쉬우므로 대우 이용이 유리)'}],
@@ -786,8 +802,8 @@ const STEPS=[
     'a, b가 실수일 때, |a| + |b| ≥ |a + b|',
     'a > 0일 때, a + 1 > √(a² + 1)']},
   {k:'method',label:'증명 방법',type:'radio',opts:['(좌변) − (우변) ≥ 0 임을 보이기 (완전제곱 이용)','양변이 0 이상일 때 (좌변)² − (우변)² ≥ 0 임을 보이기','산술평균·기하평균의 관계 이용'],req:1},
-  {k:'proof',label:'증명 초안',type:'textarea',req:1,rows:7,ph:'(좌변) − (우변) = … = (   )² + … ≥ 0  따라서 …'},
-  {k:'eq',label:'등호가 성립하는 조건',type:'text',req:1,ph:'예: a = b일 때'},
+  {k:'proof',label:'증명 초안',type:'textarea',chips:MATHCHIPS,req:1,rows:7,ph:'(좌변) − (우변) = … = (   )² + … ≥ 0  따라서 …'},
+  {k:'eq',label:'등호가 성립하는 조건',type:'text',chips:MATHCHIPS,req:1,ph:'예: a = b일 때'},
  ],
  reveal:()=>{const sel=val('s10','ineq');const bank={
  'a, b가 실수일 때, a² + b² ≥ ab':'a² + b² − ab = a² − ab + b²/4 + 3b²/4 = (a − b/2)² + 3b²/4\n(a − b/2)² ≥ 0, 3b²/4 ≥ 0 이므로 a² + b² − ab ≥ 0, 즉 a² + b² ≥ ab\n등호는 a − b/2 = 0 이고 b = 0, 즉 a = b = 0일 때 성립한다.',
@@ -818,7 +834,7 @@ const STEPS=[
    return h},
  checklist:['문자의 범위(실수·양수)를 확인하고 증명을 시작했는가?','(좌변) − (우변)이 0 이상인 이유를 제곱·절댓값의 성질로 밝혔는가?','제곱을 비교했다면 양변이 0 이상임을 먼저 말했는가?','등호가 성립하는 조건(또는 성립하지 않는 이유)을 썼는가?'],
  revise:[
-  {k:'proof2',label:'다듬은 증명 (최종, 등호 조건 포함)',type:'textarea',req:1,rows:8},
+  {k:'proof2',label:'다듬은 증명 (최종, 등호 조건 포함)',type:'textarea',chips:MATHCHIPS,req:1,rows:8},
   {k:'reflect',label:'절대부등식 증명에서 가장 중요한 한 가지를 내 말로 쓰면?',type:'textarea',req:1,rows:2},
  ],
  practice:[{q:'a, b가 실수일 때, a² + b² ≥ −ab 임을 증명하고 등호 조건을 쓰세요.',a:'a² + b² + ab = (a + b/2)² + 3b²/4 ≥ 0 이므로 a² + b² ≥ −ab. 등호는 a + b/2 = 0, b = 0, 즉 a = b = 0일 때 성립.'},
@@ -961,19 +977,21 @@ function renderHome(){const s=S.student;
   <details><summary>도형</summary><ul><li>“정삼각형은 이등변삼각형이다”, “마름모는 정사각형이다”</li><li>“x는 삼각형이다 → x의 내각의 합은 180°이다”</li></ul></details>
   <details><summary>명제가 아닌 문장의 예 (구분 연습용)</summary><ul><li>질문: “7은 소수인가?” / 명령: “계산해 보자.” / 감탄: “수학은 정말 아름답다!” / 모호: “이 수는 크다.”</li></ul></details></div>`}
 
+function chipBar(f,lock){if(lock)return '';const list=f.chips||SETCHIPS;
+  return `<button type="button" class="chiptoggle" data-toggle="${f.k}">⌨ 기호·조각 넣기</button><div class="chips">${list.map(c=>`<button type="button" class="chip ${(c.t||'').length>2?'wd':''}" data-for="${f.k}" ${c.set!==undefined?`data-set="${esc(c.set)}"`:`data-ins="${esc(c.ins!==undefined?c.ins:c.t)}"`}>${esc(c.t)}</button>`).join('')}<button type="button" class="chip del" data-for="${f.k}" data-back="1">⌫ 한 글자</button><button type="button" class="chip del" data-for="${f.k}" data-clear="1">전체 지우기</button></div>`}
 function fieldHTML(sid,f,lock){const d=st(sid);const v=d[f.k]??'';const ro=lock?'readonly':'';const req=f.req?'<span class="req">*</span>':'';
   let inner='';
   if(f.type==='head')return `<h3 style="margin:18px 0 8px;font-size:15px;color:var(--brand)">${esc(f.label)}</h3>`;
-  if(f.type==='tokens'){const chips=(f.chips||SETCHIPS).map(c=>`<button type="button" class="chip ${(c.t||'').length>2?'wd':''}" data-for="${f.k}" ${c.set!==undefined?`data-set="${esc(c.set)}"`:`data-ins="${esc(c.ins!==undefined?c.ins:c.t)}"`}>${esc(c.t)}</button>`).join('');
-    const box=`<input type="text" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${ro}>`;
-    return `<label class="field"><span class="lbl">${esc(f.label)}${req}</span>${box}${lock?'':`<div class="chips">${chips}<button type="button" class="chip del" data-for="${f.k}" data-back="1">⌫ 한 글자</button><button type="button" class="chip del" data-for="${f.k}" data-clear="1">전체 지우기</button></div>`}<small class="help">${f.help?esc(f.help)+' ':''}아래 조각을 눌러 붙이거나 직접 입력해도 돼요.</small></label>`}
+  if(f.type==='tokens'){const box=`<input type="text" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${ro}>`;
+    return `<label class="field"><span class="lbl">${esc(f.label)}${req}</span>${box}${chipBar(f,lock)}<small class="help">${f.help?esc(f.help)+' ':''}“⌨ 기호·조각 넣기”를 누르면 버튼이 나와요. 직접 입력해도 돼요.</small></label>`}
   if(f.type==='text')inner=`<input type="text" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${ro}>`;
   else if(f.type==='textarea')inner=`<textarea data-k="${f.k}" rows="${f.rows||3}" placeholder="${esc(f.ph||'')}" ${ro}>${esc(v)}</textarea>`;
   else if(f.type==='radio')inner=`<div class="radios" data-k="${f.k}">${f.opts.map(o=>`<label class="${v===o?'on':''} ${lock?'dis':''}"><input type="radio" name="${sid}_${f.k}" value="${esc(o)}" ${v===o?'checked':''} ${lock?'disabled':''}>${esc(o)}</label>`).join('')}</div>`;
   else if(f.type==='select')inner=`<select data-k="${f.k}" ${lock?'disabled':''}><option value="">— 선택 —</option>${f.opts.map(o=>`<option ${v===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
   else if(f.type==='ratings'){const r=d[f.k]||{};inner=`<div class="ratings">${f.items.map((it,i)=>`<span>${esc(it)}</span><select data-rk="${f.k}" data-ri="${i}"><option value="">선택</option>${['1 잘 모르겠음','2 조금 알 것 같음','3 보통','4 잘 이해함','5 남에게 설명 가능'].map(o=>`<option ${r[i]===o?'selected':''}>${o}</option>`).join('')}</select>`).join('')}</div>`}
+  const bar=(f.chips&&!lock)?chipBar(f,lock):'';
   const copy=(f.copy&&!lock)?` <button class="btn sm ghost noprint" data-copy="${f.copy}" data-to="${f.k}" type="button">↙ ${(()=>{const src=STEPS.find(z=>z.id===f.copy.split('.')[0]);return src?`${STEPS.indexOf(src)+1}. ${src.short||src.title}`:''})()} 값 가져오기</button>`:'';
-  return `<label class="field"><span class="lbl">${esc(f.label)}${req}${copy}</span>${inner}${f.help?`<small class="help">${esc(f.help)}</small>`:''}</label>`}
+  return `<label class="field"><span class="lbl">${esc(f.label)}${req}${copy}</span>${inner}${bar}${f.help?`<small class="help">${esc(f.help)}</small>`:''}${bar&&!f.help?'<small class="help">“⌨ 기호·조각 넣기”를 누르면 버튼이 나와요.</small>':''}</label>`}
 
 function renderStep(s){const i=STEPS.indexOf(s);const d=st(s.id);const lock=!!d.submitted;
   const preQ=s.quizzes.map((q,qi)=>q.pre?quizHTML(s,q,qi):'').join('');
@@ -1038,7 +1056,9 @@ function resetAll(){if(confirm('모든 기록을 지우고 처음부터 시작�
 let lastFocus=null;
 function bindMain(){if(main.dataset.bound)return;main.dataset.bound='1';
   main.addEventListener('focusin',e=>{if(e.target.matches('input[type=text],textarea'))lastFocus=e.target});
+  main.addEventListener('pointerdown',e=>{if(e.target.closest('.chip'))e.preventDefault()},{passive:false});
   main.addEventListener('mousedown',e=>{if(e.target.closest('.chip'))e.preventDefault()});
+
   main.oninput=e=>{const t=e.target;
     if(t.dataset.s){S.student[t.dataset.s]=t.value;save();renderWho();if(t.dataset.s!=='date')t.classList.toggle('miss',t.dataset.s==='pin'?!/^\d{4}$/.test(t.value):!t.value.trim());return}
     if(t.dataset.k&&S.cur){st(S.cur)[t.dataset.k]=t.value;save();renderSidebar();return}
@@ -1051,6 +1071,11 @@ function bindMain(){if(main.dataset.bound)return;main.dataset.bound='1';
     if(t.dataset.chk!==undefined&&S.cur){const c=st(S.cur).checks||(st(S.cur).checks=[]);c[+t.dataset.chk]=t.checked;save()}
     if(t.tagName==='SELECT'&&t.dataset.k&&S.cur){st(S.cur)[t.dataset.k]=t.value;save();renderSidebar()}};
   main.onclick=e=>{
+    const tg=e.target.closest('.chiptoggle');
+    if(tg){const f=tg.closest('.field');const on=f.classList.contains('chipon');
+      main.querySelectorAll('.field.chipon').forEach(x=>x.classList.remove('chipon'));
+      if(!on){f.classList.add('chipon');const inp=f.querySelector(`[data-k="${tg.dataset.toggle}"]`);if(inp&&!inp.readOnly)inp.focus()}
+      return}
     const pk=e.target.closest('.picks .pk');
     if(pk&&S.cur){const wrap=pk.closest('.picks');const k=wrap.dataset.qk||'quiz';const i=wrap.dataset.qi;const o=st(S.cur)[k]||(st(S.cur)[k]={});
       if(pk.dataset.v==='none'){o[i]=o[i]==='∅'?'':'∅'}
