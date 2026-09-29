@@ -155,6 +155,36 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
 .report .foot{margin-top:28px;font-size:12px;color:#777;text-align:right}
 .report .sig{margin-top:22px;display:flex;justify-content:flex-end;gap:30px;font-size:14px}
 .pb{page-break-after:always}
+/* 전자칠판 모드 */
+body.present .topbar,body.present .sidebar,body.present .palette,body.present .nopresent{display:none!important}
+body.present .layout{display:block}
+body.present main{max-width:none;padding:0}
+body.present .card{border:0;box-shadow:none;border-radius:0;margin:0;padding:0}
+.pres{min-height:100vh;background:linear-gradient(180deg,#f7f8fc,#eef1f8);padding:18px 24px 24px}
+.pres .ph{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:14px}
+.pres .ph h2{margin:0;font-size:32px}
+.pres .ph .cls{font-size:20px;color:var(--brand);font-weight:700}
+.pres .ph .sp{flex:1}
+.pres .ph .clock{font-size:26px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.pres .ph .upd{font-size:14px;color:var(--muted)}
+.pres .pmain{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start}
+.pres .pqr{background:#fff;border-radius:16px;padding:16px;text-align:center;box-shadow:var(--shadow)}
+.pres .pqr .lk{font-size:12px;color:var(--muted);word-break:break-all;margin-top:8px}
+.pres .pqr .hint{font-size:15px;font-weight:700;margin-top:10px;color:var(--brand)}
+.pres .pstat{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.pres .pstat div{background:#fff;border-radius:14px;padding:12px 10px;text-align:center;box-shadow:var(--shadow);font-size:15px;color:var(--muted)}
+.pres .pstat b{display:block;font-size:34px;color:var(--brand);line-height:1.1}
+.pres .board{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.pres .scard{padding:12px 14px;border-radius:14px;box-shadow:var(--shadow);border-color:transparent}
+.pres .scard .nm{font-size:21px}
+.pres .scard .nm i{font-size:15px}
+.pres .scard .bar{height:12px;margin:10px 0 6px}
+.pres .scard .mt{font-size:14px}
+.pres .scard .les span{height:9px}
+.pres .scard.none{box-shadow:none;border:2px dashed #cbd2e2;background:#f3f5f9}
+.pres .pexit{position:fixed;right:14px;bottom:14px;z-index:60;opacity:.35}
+.pres .pexit:hover{opacity:1}
+@media (max-width:900px){.pres .pmain{grid-template-columns:1fr}.pres .pstat{grid-template-columns:repeat(2,1fr)}}
 /* 교사 보드 */
 .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:10px}
 .scard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;text-align:left;position:relative;transition:.15s}
@@ -954,13 +984,15 @@ async function fetchSubmissions(quiet){const url=submitUrl();if(!url){if(!quiet)
   let key=TKEYCODE;
   if(!key){if(quiet)return;key=prompt('교사 코드를 입력하세요.',TEACHER_CODE);if(key===null)return;key=key.trim()}
   try{const r=await fetch(url+(url.includes('?')?'&':'?')+'key='+encodeURIComponent(key));const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
-    TKEYCODE=key;T=j.items.filter(x=>x&&x.steps&&x.student);T.sort((a,b)=>String(a.student.sid).localeCompare(String(b.student.sid),'ko',{numeric:true}));render();if(!quiet)alert(`${T.length}명의 제출을 불러왔어요. (학생별 최신 제출 기준)`)}
+    TKEYCODE=key;LASTUPD=new Date().toTimeString().slice(0,8);T=j.items.filter(x=>x&&x.steps&&x.student);T.sort((a,b)=>String(a.student.sid).localeCompare(String(b.student.sid),'ko',{numeric:true}));render();if(!quiet)alert(`${T.length}명의 제출을 불러왔어요. (학생별 최신 제출 기준)`)}
   catch(e){if(!quiet)alert('불러오기에 실패했어요. 주소와 코드를 확인해 주세요. ('+e.message+')')}}
 const TKEY='myeongje-teacher';
 function isTeacher(){try{return localStorage.getItem(TKEY)==='1'}catch(e){return false}}
 function setTeacher(on){try{on?localStorage.setItem(TKEY,'1'):localStorage.removeItem(TKEY)}catch(e){}render()}
 function enterTeacher(){const c=prompt('교사 모드 코드를 입력하세요.');if(c===null)return;if(c.trim()===TEACHER_CODE)setTeacher(true);else alert('코드가 맞지 않아요.')}
-(function(){try{const u=new URL(location.href);const t=u.searchParams.get('teacher');if(t!==null){if(t===TEACHER_CODE)localStorage.setItem(TKEY,'1');else if(t==='off')localStorage.removeItem(TKEY);u.searchParams.delete('teacher');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}})();
+(function(){try{const u=new URL(location.href);const b=u.searchParams.get('board');
+  if(b!==null&&b===TEACHER_CODE){localStorage.setItem(TKEY,'1');sessionStorage.setItem('myeongje-present','1');u.searchParams.delete('board');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}
+  const t=u.searchParams.get('teacher');if(t!==null){if(t===TEACHER_CODE)localStorage.setItem(TKEY,'1');else if(t==='off')localStorage.removeItem(TKEY);u.searchParams.delete('teacher');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}})();
 function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명제 아님';
   if(!notP&&/\?$|일까요?$|입니까$|인가요?$|습니까$/.test(t))h.push('물음표나 “~일까?”로 끝나요. 질문은 참·거짓을 판별할 수 없으니 명제가 아니에요.');
   if(!notP&&/!$|구나$|네요$|다니$/.test(t))h.push('감탄 표현으로 보여요. 감탄문은 명제가 아니에요.');
@@ -1237,13 +1269,13 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-09-29d';
+const APPVER='2026-09-29e';
 const STUURL=location.origin+location.pathname;
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
 function findSub(clsId,no,name){return T.find(x=>{const st_=x.student||{};return (st_.clsId===clsId&&String(st_.no)===String(no))||(st_.name===name&&(!st_.clsId||st_.clsId===clsId))})}
 function progOf(x){const done=STEPS.filter(z=>(x.steps[z.id]||{}).done).length;const les=LESSONS.map(L=>L.steps.every(id=>(x.steps[id]||{}).done));return {done,total:STEPS.length,les,lesDone:les.filter(Boolean).length}}
-function boardHTML(){const c=clsOf(bclass());if(!c)return '';
+function boardHTML(pres){const c=clsOf(bclass());if(!c)return '';
   const rows=c.students.map(t=>{const sub=findSub(c.id,t.no,t.name);const pr=sub?progOf(sub):null;
     const pct=pr?Math.round(pr.done/pr.total*100):0;
     const at=sub&&sub.submittedAt?String(sub.submittedAt).replace('T',' ').slice(5,16):'';
@@ -1259,7 +1291,7 @@ function boardHTML(){const c=clsOf(bclass());if(!c)return '';
   const fin=subs.filter(t=>{const x=findSub(c.id,t.no,t.name);return progOf(x).done===STEPS.length});
   const avg=subs.length?Math.round(subs.reduce((a,t)=>a+progOf(findSub(c.id,t.no,t.name)).done,0)/subs.length*10)/10:0;
   const extra=T.filter(x=>!c.students.some(t=>findSub(c.id,t.no,t.name)===x)&&(x.student||{}).clsId===c.id);
-  return `<div class="bstat"><div>제출 <b>${subs.length}</b> / ${c.students.length}명</div><div>완주 <b>${fin.length}</b>명</div><div>평균 진행 <b>${avg}</b>/${STEPS.length}단계</div><div>미제출 <b>${c.students.length-subs.length}</b>명</div></div>
+  return `${pres?'':`<div class="bstat"><div>제출 <b>${subs.length}</b> / ${c.students.length}명</div><div>완주 <b>${fin.length}</b>명</div><div>평균 진행 <b>${avg}</b>/${STEPS.length}단계</div><div>미제출 <b>${c.students.length-subs.length}</b>명</div></div>`}
   <div class="board">${rows}</div>
   ${extra.length?`<p class="small" style="margin-top:10px">⚠️ 명단과 이름이 다른 제출 ${extra.length}건: ${extra.map(x=>esc(x.student.name)).join(', ')}</p>`:''}`}
 function showStudent(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x.no===no);const x=findSub(clsId,no,t.name);if(!x)return;
@@ -1273,7 +1305,35 @@ function drawQR(tries){const el=$('#qr');if(!el)return;
 function qrBig(){const w=window.open('','_blank','width=520,height=640');if(!w){alert('팝업이 차단되었어요. 브라우저에서 팝업을 허용해 주세요.');return}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
 function autoRefresh(on){if(BTIMER){clearInterval(BTIMER);BTIMER=null}if(on)BTIMER=setInterval(()=>fetchSubmissions(true),60000);render()}
-function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🏫 교사 보드</h3>
+let PRESENT=false,CLOCKT=null,LASTUPD='';
+function presentMode(on){PRESENT=on;document.body.classList.toggle('present',on);
+  if(on){autoRefresh(true);if(!T.length)fetchSubmissions();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+    if(!CLOCKT)CLOCKT=setInterval(tickClock,1000)}
+  else{if(CLOCKT){clearInterval(CLOCKT);CLOCKT=null}try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}}
+  render();setTimeout(drawQR,60)}
+function tickClock(){const el=$('#pclock');if(!el)return;const d=new Date();el.textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&PRESENT)presentMode(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&PRESENT)presentMode(false)});
+function renderPresent(){const c=clsOf(bclass());const subs=c?c.students.filter(t=>findSub(c.id,t.no,t.name)):[];
+  const fin=subs.filter(t=>progOf(findSub(c.id,t.no,t.name)).done===STEPS.length);
+  const avg=subs.length?Math.round(subs.reduce((a,t)=>a+progOf(findSub(c.id,t.no,t.name)).done,0)/subs.length*10)/10:0;
+  main.innerHTML=`<div class="pres"><div class="ph"><h2>명제 탐구 노트</h2><span class="cls">${esc(c?c.label:'')}</span><span class="sp"></span>
+    <span class="upd">${LASTUPD?'최근 갱신 '+esc(LASTUPD):'불러오는 중…'}</span><span class="clock" id="pclock">--:--:--</span></div>
+   <div class="pmain">
+     <div>
+       <div class="pqr"><div id="qr"></div><div class="hint">QR을 찍어 들어오세요</div><div class="lk">${esc(STUURL)}</div></div>
+       <p style="margin-top:12px"><select onchange="BCLS=this.value;render()" style="width:100%;border:1px solid #cfd4e2;border-radius:10px;padding:8px 10px;font-size:15px">${ROSTER.map(x=>`<option value="${x.id}" ${bclass()===x.id?'selected':''}>${esc(x.label)}</option>`).join('')}</select></p>
+       <p><button class="btn sm" style="width:100%" onclick="fetchSubmissions()">🔄 지금 새로고침</button></p>
+     </div>
+     <div>
+       <div class="pstat"><div><b>${subs.length}</b>제출 (총 ${c?c.students.length:0}명)</div><div><b>${c?c.students.length-subs.length:0}</b>아직 안 낸 학생</div><div><b>${fin.length}</b>완주</div><div><b>${avg}</b>평균 단계 / ${STEPS.length}</div></div>
+       ${boardHTML(true)}
+     </div>
+   </div>
+   <button class="btn pexit" onclick="presentMode(false)">✕ 전자칠판 모드 끄기 (ESC)</button></div>`;
+  tickClock();setTimeout(drawQR,60)}
+function renderTeacher(){if(PRESENT)return renderPresent();
+  main.innerHTML=`<div class="card noprint"><h3>🏫 교사 보드</h3>
   <div class="qrbox">
     <div class="qrwrap"><div id="qr"></div><div class="lk">${esc(STUURL)}</div>
       <p style="margin:8px 0 0"><button class="btn sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(STUURL).then(()=>alert('학생용 주소를 복사했어요.'),()=>prompt('주소를 복사하세요',STUURL))||prompt('주소를 복사하세요',STUURL)">📋 주소 복사</button>
@@ -1282,6 +1342,7 @@ function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🏫 교�
       <p class="small" style="margin:0 0 8px">학생들에게 이 QR을 보여 주면 카메라로 찍어 바로 들어올 수 있어요.</p>
       <p><label class="lbl" style="font-size:13px">학급 보기</label>
       <select onchange="BCLS=this.value;render()" style="border:1px solid #cfd4e2;border-radius:8px;padding:6px 10px">${ROSTER.map(c=>`<option value="${c.id}" ${bclass()===c.id?'selected':''}>${esc(c.label)} (${c.students.length}명)</option>`).join('')}</select></p>
+      <p><button class="btn sm primary" onclick="presentMode(true)">📺 전자칠판 모드 (전체화면)</button></p>
       <p><button class="btn sm primary" onclick="fetchSubmissions()">🔄 새로고침 (제출함 불러오기)</button>
       <button class="btn sm" onclick="autoRefresh(${BTIMER?'false':'true'})">${BTIMER?'⏸ 자동 새로고침 끄기':'▶ 1분마다 자동 새로고침'}</button></p>
       <p class="small">${T.length?`불러온 제출 <b>${T.length}</b>건`:'아직 제출을 불러오지 않았어요. “새로고침”을 눌러 주세요.'}</p>
@@ -1326,6 +1387,7 @@ function exportCSV(){const head=['학번','이름','날짜','완료단계','명�
 
 /* ================= 시작 ================= */
 bindMain();render();
+try{if(sessionStorage.getItem('myeongje-present')==='1'){sessionStorage.removeItem('myeongje-present');S.view='teacher';save();setTimeout(()=>presentMode(true),150)}}catch(e){}
 </script>
 </body>
 </html>
