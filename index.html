@@ -950,6 +950,8 @@ function prefillSum(){const d=st('sum');const g=(id,k)=>val(id,k);const m={r1_s:
   let n=0;for(const k in m){if(!String(d[k]||'').trim()&&m[k]){d[k]=m[k];n++}}save();render();alert(n?`${n}개 항목을 Ⅰ부 기록에서 가져왔어요. 수업 중 고친 내용으로 수정해 주세요.`:'가져올 새 내용이 없어요. (이미 채워져 있거나 Ⅰ부 기록이 비어 있어요)')}
 /* 교사 모드: 교과서 문제는 교사 모드에서만 표시 */
 const TEACHER_CODE='명제교사';
+const TEACHER_CODES=['명제교사','mj2026'];  /* 전자칠판 등 한글 입력이 불편할 때 영문 코드도 사용 */
+function okCode(c){return TEACHER_CODES.includes(String(c||'').trim())}
 /* ★ 선생님 설정: 구글 시트 수집용 Apps Script 웹 앱 주소 (README의 “제출 수집 설정” 참고). 비어 있으면 파일 저장만 가능 */
 const SUBMIT_URL='https://script.google.com/macros/s/AKfycbyUPDl7LhANpEuPPmtvsVdFMwk2e7AHymUUPUlKplGoKM8Ko9T5Sx0vTcf35TwhEQeM/exec';
 function submitUrl(){try{return localStorage.getItem('myeongje-submit-url')||SUBMIT_URL}catch(e){return SUBMIT_URL}}
@@ -982,17 +984,18 @@ let TKEYCODE=null;
 const SHEET_URL='https://docs.google.com/spreadsheets/d/1dRlN9NLbFqk0TWouxomnRijWnUJuBls03NmOD2ZcV5w/edit';
 async function fetchSubmissions(quiet){const url=submitUrl();if(!url){if(!quiet)alert('제출 주소(SUBMIT_URL)가 설정되지 않았어요.');return}
   let key=TKEYCODE;
-  if(!key){if(quiet)return;key=prompt('교사 코드를 입력하세요.',TEACHER_CODE);if(key===null)return;key=key.trim()}
+  if(!key)key=isTeacher()?TEACHER_CODE:null;
+  if(!key){if(quiet)return;askCode('먼저 교사 코드를 입력해 주세요.');return}
   try{const r=await fetch(url+(url.includes('?')?'&':'?')+'key='+encodeURIComponent(key));const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
     TKEYCODE=key;LASTUPD=new Date().toTimeString().slice(0,8);T=j.items.filter(x=>x&&x.steps&&x.student);T.sort((a,b)=>String(a.student.sid).localeCompare(String(b.student.sid),'ko',{numeric:true}));render();if(!quiet)alert(`${T.length}명의 제출을 불러왔어요. (학생별 최신 제출 기준)`)}
   catch(e){if(!quiet)alert('불러오기에 실패했어요. 주소와 코드를 확인해 주세요. ('+e.message+')')}}
 const TKEY='myeongje-teacher';
 function isTeacher(){try{return localStorage.getItem(TKEY)==='1'}catch(e){return false}}
 function setTeacher(on){try{on?localStorage.setItem(TKEY,'1'):localStorage.removeItem(TKEY)}catch(e){}render()}
-function enterTeacher(){const c=prompt('교사 모드 코드를 입력하세요.');if(c===null)return;if(c.trim()===TEACHER_CODE)setTeacher(true);else alert('코드가 맞지 않아요.')}
+function enterTeacher(){const c=prompt('교사 코드를 입력하세요. (명제교사 또는 mj2026)');if(c===null)return;if(okCode(c))setTeacher(true);else alert('코드가 맞지 않아요.')}
 (function(){try{const u=new URL(location.href);const b=u.searchParams.get('board');
-  if(b!==null&&b===TEACHER_CODE){localStorage.setItem(TKEY,'1');sessionStorage.setItem('myeongje-present','1');u.searchParams.delete('board');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}
-  const t=u.searchParams.get('teacher');if(t!==null){if(t===TEACHER_CODE)localStorage.setItem(TKEY,'1');else if(t==='off')localStorage.removeItem(TKEY);u.searchParams.delete('teacher');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}})();
+  if(b!==null&&okCode(b)){localStorage.setItem(TKEY,'1');sessionStorage.setItem('myeongje-present','1');u.searchParams.delete('board');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}
+  const t=u.searchParams.get('teacher');if(t!==null){if(okCode(t))localStorage.setItem(TKEY,'1');else if(t==='off')localStorage.removeItem(TKEY);u.searchParams.delete('teacher');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}})();
 function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명제 아님';
   if(!notP&&/\?$|일까요?$|입니까$|인가요?$|습니까$/.test(t))h.push('물음표나 “~일까?”로 끝나요. 질문은 참·거짓을 판별할 수 없으니 명제가 아니에요.');
   if(!notP&&/!$|구나$|네요$|다니$/.test(t))h.push('감탄 표현으로 보여요. 감탄문은 명제가 아니에요.');
@@ -1269,7 +1272,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-09-29e';
+const APPVER='2026-09-29g';
 const STUURL=location.origin+location.pathname;
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
@@ -1306,6 +1309,20 @@ function qrBig(){const w=window.open('','_blank','width=520,height=640');if(!w){
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
 function autoRefresh(on){if(BTIMER){clearInterval(BTIMER);BTIMER=null}if(on)BTIMER=setInterval(()=>fetchSubmissions(true),60000);render()}
 let PRESENT=false,CLOCKT=null,LASTUPD='';
+function startPresent(){if(isTeacher()){S.view='teacher';save();presentMode(true);return}askCode()}
+function askCode(msg){document.body.classList.remove('present');
+  main.innerHTML=`<div class="card" style="max-width:460px;margin:40px auto;text-align:center">
+    <h2 style="margin:0 0 6px">📺 전자칠판 보드</h2>
+    <p class="small">교사 코드를 입력하면 이 기기에서 바로 보드가 열려요.<br>한 번만 입력하면 다음부터는 묻지 않아요.</p>
+    ${msg?`<div class="hint warn">${esc(msg)}</div>`:''}
+    <p><input id="tcode" type="text" placeholder="교사 코드" style="width:220px;text-align:center;font-size:18px;border:1px solid #cfd4e2;border-radius:10px;padding:10px"></p>
+    <p><button class="btn primary" onclick="tryCode()">보드 열기</button> <button class="btn" onclick="go('home')">취소</button></p>
+    <p class="small">코드: 명제교사 또는 <b>mj2026</b> (영문 입력이 편할 때)</p></div>`;
+  const el=$('#tcode');if(el){el.focus();el.onkeydown=e=>{if(e.key==='Enter')tryCode()}}}
+function tryCode(){const el=$('#tcode');const v=el?el.value:'';
+  if(!okCode(v)){askCode('코드가 맞지 않아요. 다시 입력해 주세요.');return}
+  try{localStorage.setItem(TKEY,'1')}catch(e){}
+  S.view='teacher';save();presentMode(true)}
 function presentMode(on){PRESENT=on;document.body.classList.toggle('present',on);
   if(on){autoRefresh(true);if(!T.length)fetchSubmissions();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
     if(!CLOCKT)CLOCKT=setInterval(tickClock,1000)}
@@ -1343,6 +1360,7 @@ function renderTeacher(){if(PRESENT)return renderPresent();
       <p><label class="lbl" style="font-size:13px">학급 보기</label>
       <select onchange="BCLS=this.value;render()" style="border:1px solid #cfd4e2;border-radius:8px;padding:6px 10px">${ROSTER.map(c=>`<option value="${c.id}" ${bclass()===c.id?'selected':''}>${esc(c.label)} (${c.students.length}명)</option>`).join('')}</select></p>
       <p><button class="btn sm primary" onclick="presentMode(true)">📺 전자칠판 모드 (전체화면)</button></p>
+      <p class="small" style="margin:-4px 0 8px">전자칠판 브라우저에서는 <b>${esc(STUURL+'board.html')}</b> 주소를 열면 바로 이 모드로 시작해요.</p>
       <p><button class="btn sm primary" onclick="fetchSubmissions()">🔄 새로고침 (제출함 불러오기)</button>
       <button class="btn sm" onclick="autoRefresh(${BTIMER?'false':'true'})">${BTIMER?'⏸ 자동 새로고침 끄기':'▶ 1분마다 자동 새로고침'}</button></p>
       <p class="small">${T.length?`불러온 제출 <b>${T.length}</b>건`:'아직 제출을 불러오지 않았어요. “새로고침”을 눌러 주세요.'}</p>
@@ -1387,7 +1405,7 @@ function exportCSV(){const head=['학번','이름','날짜','완료단계','명�
 
 /* ================= 시작 ================= */
 bindMain();render();
-try{if(sessionStorage.getItem('myeongje-present')==='1'){sessionStorage.removeItem('myeongje-present');S.view='teacher';save();setTimeout(()=>presentMode(true),150)}}catch(e){}
+try{if(sessionStorage.getItem('myeongje-present')==='1'){sessionStorage.removeItem('myeongje-present');setTimeout(startPresent,150)}}catch(e){}
 </script>
 </body>
 </html>
