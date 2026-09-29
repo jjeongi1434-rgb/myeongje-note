@@ -155,6 +155,31 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
 .report .foot{margin-top:28px;font-size:12px;color:#777;text-align:right}
 .report .sig{margin-top:22px;display:flex;justify-content:flex-end;gap:30px;font-size:14px}
 .pb{page-break-after:always}
+/* 교사 보드 */
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:10px}
+.scard{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;text-align:left;position:relative;transition:.15s}
+.scard:hover{border-color:var(--brand);box-shadow:var(--shadow)}
+.scard .nm{font-weight:700;font-size:15px;display:flex;align-items:baseline;gap:6px}
+.scard .nm i{font-style:normal;color:var(--muted);font-size:12px;font-weight:500}
+.scard .bar{height:8px;border-radius:99px;background:#eef0f5;margin:8px 0 5px;overflow:hidden}
+.scard .bar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.scard .mt{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.scard.none{background:#fafbfc;border-style:dashed}
+.scard.none .nm{color:var(--muted)}
+.scard.done{background:var(--ok-soft);border-color:#bfe3c4}
+.scard.done .bar i{background:var(--ok)}
+.scard .les{margin-top:7px;display:flex;gap:3px}
+.scard .les span{flex:1;height:6px;border-radius:2px;background:#e7eaf1}
+.scard .les span.on{background:var(--brand)}
+.scard.done .les span.on{background:var(--ok)}
+.bstat{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.bstat div{background:#f5f6fa;border-radius:10px;padding:7px 14px;font-size:14px}
+.bstat b{font-size:18px;color:var(--brand)}
+.qrbox{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.qrbox #qr img,.qrbox #qr canvas{display:block;border:6px solid #fff;border-radius:8px}
+.qrwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.qrwrap .lk{font-size:12px;color:var(--muted);word-break:break-all;max-width:210px;margin-top:4px}
+@media print{.board{grid-template-columns:repeat(4,1fr)}}
 .teacher table.list{width:100%;border-collapse:collapse;font-size:14px}
 .teacher table.list th,.teacher table.list td{border:1px solid var(--line);padding:6px 8px;text-align:left}
 .teacher table.list th{background:#f7f8fb}
@@ -200,6 +225,7 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
 <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
 <input type="file" id="fileMulti" accept=".json,application/json" multiple style="display:none">
 <script src="https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 <script>
 /* ================= 유틸 ================= */
 const KEY='myeongje-note-v1';
@@ -208,6 +234,11 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const nl=s=>esc(s).replace(/\n/g,'<br>');
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const TF=['참','거짓'];
+/* ===== 학생 명단 (구글 시트에서 가져옴) ===== */
+const ROSTER=[{"id":"c12","label":"1학년 AI설비과 2반","students":[{"no":"1","name":"권혁준"},{"no":"2","name":"김도현"},{"no":"3","name":"박건우"},{"no":"4","name":"박시후"},{"no":"5","name":"박은총"},{"no":"6","name":"성세민"},{"no":"7","name":"신은수"},{"no":"8","name":"우경민"},{"no":"9","name":"윤하율"},{"no":"10","name":"이종민"},{"no":"11","name":"이종훈"},{"no":"12","name":"이해준"},{"no":"13","name":"임시후"},{"no":"14","name":"임준세"},{"no":"15","name":"장준"},{"no":"16","name":"전예준"},{"no":"17","name":"전현준"},{"no":"18","name":"정윤재"},{"no":"19","name":"조승우"},{"no":"20","name":"조우진"}]}];
+function clsOf(id){return ROSTER.find(c=>c.id===id)}
+function sidOf(clsId,no){return clsId+'-'+String(no).padStart(2,'0')}
+
 /* 집합 답 비교용 */
 function setNums(x){const m=String(x==null?'':x).replace(/[−–—]/g,'-').match(/-?\d+/g);return m?m.map(Number):[]}
 function normSet(x){const a=[...new Set(setNums(x))].sort((u,v)=>u-v);return a.length?'{'+a.join(', ')+'}':'∅'}
@@ -237,7 +268,7 @@ const hasNum=s=>/\d/.test(s);
 
 /* ================= 상태 ================= */
 let S=load()||fresh();
-function fresh(){return {v:1,student:{name:'',sid:'',cls:'',pin:'',date:today()},steps:{},view:'home',cur:null,updated:''}}
+function fresh(){return {v:1,student:{name:'',sid:'',cls:'',clsId:'',no:'',pin:'',date:today()},steps:{},view:'home',cur:null,updated:''}}
 let STORE=null;(function(){for(const n of ['localStorage','sessionStorage']){try{const st=window[n];st.setItem('__t','1');st.removeItem('__t');STORE=st;break}catch(e){}}})();
 const storageWeak=!STORE||STORE===window.sessionStorage;
 function load(){try{const j=(STORE||localStorage).getItem(KEY);const o=j?JSON.parse(j):null;if(o&&!o.student.pin)o.student.pin='';return o}catch(e){return null}}
@@ -899,25 +930,32 @@ async function submitToTeacher(){const url=submitUrl();
   const btns=[...document.querySelectorAll('button')].filter(b=>/제출/.test(b.textContent));btns.forEach(b=>b.disabled=true);
   try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({student:S.student,done,total:STEPS.length,lessons:LESSONS.filter(L=>L.steps.every(id=>st(id).done)).length,answers:flatAnswers(S),state:S})});
     const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
-    S.lastSubmit=new Date().toISOString();save();alert(`제출 완료! (${S.student.sid} ${S.student.name}, ${done}/${STEPS.length}단계)\n수정한 뒤 다시 제출하면 최신 것으로 반영돼요.`)}
+    S.lastSubmit=new Date().toISOString();save();alert(`제출 완료! (${S.student.cls} ${S.student.name}, ${done}/${STEPS.length}단계)\n수정한 뒤 다시 제출하면 최신 것으로 반영돼요.`)}
   catch(e){alert('제출에 실패했어요. 인터넷 연결을 확인하고 다시 눌러 보세요.\n계속 안 되면 “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.')}
   finally{btns.forEach(b=>b.disabled=false)}}
-function missingStudent(){if(isTeacher())return [];const st_=S.student;const m=[];if(!(st_.sid||'').trim())m.push('sid');if(!(st_.name||'').trim())m.push('name');if(!/^\d{4}$/.test(st_.pin||''))m.push('pin');return m}
+function missingStudent(){if(isTeacher())return [];const st_=S.student;const m=[];if(!(st_.clsId||'').trim())m.push('clsId');if(!(st_.name||'').trim())m.push('no');if(!/^\d{4}$/.test(st_.pin||''))m.push('pin');return m}
+function ensureClass(){if(ROSTER.length===1&&S.student&&!S.student.clsId){S.student.clsId=ROSTER[0].id;S.student.cls=ROSTER[0].label}}
+function pickClass(v){const c=clsOf(v);S.student.clsId=v;S.student.cls=c?c.label:'';S.student.no='';S.student.name='';S.student.sid='';save();render()}
+function pickStudent(v){const c=clsOf(S.student.clsId);if(!c)return;const t=c.students.find(x=>x.no===v);if(!t)return;S.student.no=t.no;S.student.name=t.name;S.student.sid=sidOf(c.id,t.no);save();render()}
 function ensureIdentity(){const m=missingStudent();if(!m.length)return true;
-  alert('학생 정보(학번·이름·제출 비밀번호)를 먼저 모두 입력해 주세요.');go('home');setTimeout(()=>{const el=document.querySelector(`[data-s="${m[0]}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}},50);return false}
+  alert('학생 정보(학급·이름·제출 비밀번호)를 먼저 모두 입력해 주세요.');go('home');setTimeout(()=>{const el=document.querySelector(`[data-s="${m[0]}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}},50);return false}
 async function loadMine(){const url=submitUrl();if(!url){alert('제출 주소가 설정되지 않아 불러올 수 없어요.');return}
-  const cls='';const sid=prompt('학번 (제출할 때 쓴 그대로)',S.student.sid);if(sid===null)return;const name=prompt('이름',S.student.name);if(name===null)return;const pin=prompt('제출 비밀번호 (숫자 4자리)','');if(pin===null)return;
+  if(!S.student.clsId||!S.student.name){alert('먼저 학급과 이름을 골라 주세요.');return}
+  const cls='';const sid=S.student.sid,name=S.student.name;const pin=prompt(`${name} 학생의 제출 비밀번호(숫자 4자리)를 입력하세요.`,'');if(pin===null)return;
   try{const r=await fetch(url+(url.includes('?')?'&':'?')+'cls='+encodeURIComponent(cls.trim())+'&sid='+encodeURIComponent(sid.trim())+'&name='+encodeURIComponent(name.trim())+'&pin='+encodeURIComponent(pin.trim()));const j=await r.json();
-    if(!j.ok){alert(j.error==='notfound'?'제출된 기록을 찾지 못했어요. 학급·학번·이름을 제출할 때와 똑같이 썼는지 확인해 주세요.':j.error==='pin'?'비밀번호가 맞지 않아요.':j.error==='key'?'제출함이 아직 “내 기록 불러오기”를 지원하지 않아요. 선생님께 알려 주세요. (Apps Script 새 버전 배포 필요)':'불러오기에 실패했어요. ('+(j.error||'')+')');return}
+    if(!j.ok){alert(j.error==='notfound'?'제출된 기록이 없어요. (아직 한 번도 제출하지 않았거나, 다른 이름으로 제출했을 수 있어요)':j.error==='pin'?'비밀번호가 맞지 않아요.':j.error==='key'?'제출함이 아직 “내 기록 불러오기”를 지원하지 않아요. 선생님께 알려 주세요. (Apps Script 새 버전 배포 필요)':'불러오기에 실패했어요. ('+(j.error||'')+')');return}
     const mine=STEPS.filter(x=>st(x.id).done).length;const theirs=STEPS.filter(x=>(j.state.steps[x.id]||{}).done).length;
     if(!confirm(`${name}님의 제출 기록(완료 ${theirs}단계, ${String(j.submittedAt||'').replace('T',' ').slice(0,16)})을 불러올까요?\n지금 이 기기의 기록(완료 ${mine}단계)은 덮어써져요.`))return;
     S=j.state;S.view='home';save();render();alert('불러왔어요. “이어서 시작하기”를 누르세요.')}
   catch(e){alert('불러오기에 실패했어요. 인터넷 연결을 확인해 주세요.')}}
-async function fetchSubmissions(){const url=submitUrl();if(!url){alert('제출 주소(SUBMIT_URL)가 설정되지 않았어요. README의 “제출 수집 설정”을 참고하세요.');return}
-  const key=prompt('교사 모드 코드를 입력하세요. (Apps Script의 KEY와 같아야 해요)');if(key===null)return;
-  try{const r=await fetch(url+(url.includes('?')?'&':'?')+'key='+encodeURIComponent(key.trim()));const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
-    T=j.items.filter(x=>x&&x.steps&&x.student);T.sort((a,b)=>String(a.student.sid).localeCompare(String(b.student.sid),'ko',{numeric:true}));render();alert(`${T.length}명의 제출을 불러왔어요. (학생별 최신 제출 기준)`)}
-  catch(e){alert('불러오기에 실패했어요. 주소와 코드를 확인해 주세요. ('+e.message+')')}}
+let TKEYCODE=null;
+const SHEET_URL='https://docs.google.com/spreadsheets/d/1dRlN9NLbFqk0TWouxomnRijWnUJuBls03NmOD2ZcV5w/edit';
+async function fetchSubmissions(quiet){const url=submitUrl();if(!url){if(!quiet)alert('제출 주소(SUBMIT_URL)가 설정되지 않았어요.');return}
+  let key=TKEYCODE;
+  if(!key){if(quiet)return;key=prompt('교사 코드를 입력하세요.',TEACHER_CODE);if(key===null)return;key=key.trim()}
+  try{const r=await fetch(url+(url.includes('?')?'&':'?')+'key='+encodeURIComponent(key));const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
+    TKEYCODE=key;T=j.items.filter(x=>x&&x.steps&&x.student);T.sort((a,b)=>String(a.student.sid).localeCompare(String(b.student.sid),'ko',{numeric:true}));render();if(!quiet)alert(`${T.length}명의 제출을 불러왔어요. (학생별 최신 제출 기준)`)}
+  catch(e){if(!quiet)alert('불러오기에 실패했어요. 주소와 코드를 확인해 주세요. ('+e.message+')')}}
 const TKEY='myeongje-teacher';
 function isTeacher(){try{return localStorage.getItem(TKEY)==='1'}catch(e){return false}}
 function setTeacher(on){try{on?localStorage.setItem(TKEY,'1'):localStorage.removeItem(TKEY)}catch(e){}render()}
@@ -934,15 +972,15 @@ function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명
 
 /* ================= 렌더링 ================= */
 const main=$('#main');
-function go(view,id){if(view==='step'&&missingStudent().length){S.view='home';save();render();alert('먼저 홈 화면의 학생 정보(학번·이름·제출 비밀번호)를 모두 입력해 주세요.');const el=document.querySelector(`[data-s="${missingStudent()[0]}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}return}
+function go(view,id){if(view==='step'&&missingStudent().length){S.view='home';save();render();alert('먼저 홈 화면의 학생 정보(학급·이름·제출 비밀번호)를 모두 입력해 주세요.');const el=document.querySelector(`[data-s="${missingStudent()[0]}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}return}
   S.view=view;if(id)S.cur=id;save();render();window.scrollTo({top:0})}
 function stepStatus(s){const d=st(s.id);if(d.done)return'done';if(d.submitted||s.draft.some(f=>d[f.k])||(s.quizOnly&&s.quizzes.some((q,qi)=>Object.keys(d[qkey(qi)]||{}).length)))return'started';return''}
 function renderSidebar(){const el=$('#sidebar');let last=null;el.innerHTML=STEPS.map((s,i)=>{const sst=stepStatus(s);const act=S.view==='step'&&S.cur===s.id;const L=s.lesson;const h=L!==last?`<h3 style="${last?'margin-top:12px':''}">${L.n}차시 · ${esc(L.title)}</h3>`:'';last=L;
   return h+`<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
   `<h3 style="margin-top:14px">기록</h3><button class="navitem ${S.view==='report'?'active':''}" onclick="go('report')"><span class="dot">📄</span><span class="t">활동 기록 · 출력</span></button>
-   <button class="navitem ${S.view==='teacher'?'active':''}" onclick="go('teacher')"><span class="dot">👩‍🏫</span><span class="t">교사용 취합</span></button>`}
-function renderWho(){const s=S.student;const done=STEPS.filter(x=>st(x.id).done).length;$('#who').textContent=(s.name?`${s.sid?s.sid+' ':''}${s.name}`:'이름을 입력해 주세요')+` · ${done}/${STEPS.length}단계 완료`+(isTeacher()?' · 👩‍🏫 교사 모드':'')}
-function render(){renderSidebar();renderWho();
+   <button class="navitem ${S.view==='teacher'?'active':''}" onclick="go('teacher')"><span class="dot">👩‍🏫</span><span class="t">교사 보드</span></button>`}
+function renderWho(){const s=S.student;const done=STEPS.filter(x=>st(x.id).done).length;$('#who').textContent=(s.name?`${s.cls?s.cls+' ':''}${s.no?s.no+'번 ':''}${s.name}`:'이름을 입력해 주세요')+` · ${done}/${STEPS.length}단계 완료`+(isTeacher()?' · 👩‍🏫 교사 모드':'')}
+function render(){ensureClass();renderSidebar();renderWho();
   if(S.view==='step'&&S.cur)renderStep(STEPS.find(s=>s.id===S.cur));
   else if(S.view==='report')renderReport();
   else if(S.view==='teacher')renderTeacher();
@@ -961,11 +999,11 @@ function renderHome(){const s=S.student;
   <div class="hint info">✍️ 입력한 내용은 이 기기에 자동 저장되고, <b>📤 제출</b>을 누르면 선생님 제출함에 보관돼요. 다른 기기에서 이어서 하려면 아래 <b>내 기록 불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div></div>
   ${isTeacher()?`<div class="card noprint" style="border-color:var(--brand)"><h3>👩‍🏫 교사 모드로 보는 중</h3><p class="small">학생 정보 없이 모든 단계를 둘러볼 수 있고, 각 단계 끝에 <b>교과서 문제</b>가 함께 표시돼요. 단계 안의 내용은 <b>초안 제출 → 판정 기준</b> 순서라, 판정 기준·모범 답안을 바로 보려면 각 화면의 <b>“기준 미리 보기”</b> 버튼을 누르세요.</p><p><button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button> <button class="btn sm" onclick="go('teacher')">👩‍🏫 교사용 취합으로</button></p></div>`:''}
   <div class="card"><h3>학생 정보</h3><div class="grid2">
-   <label class="field"><span class="lbl">학번 <span class="req">*</span></span><input type="text" data-s="sid" value="${esc(s.sid)}" class="${s.sid.trim()?'':'miss'}"></label>
-   <label class="field"><span class="lbl">이름 <span class="req">*</span></span><input type="text" data-s="name" value="${esc(s.name)}" class="${s.name.trim()?'':'miss'}"></label>
+   <label class="field"><span class="lbl">학급 <span class="req">*</span></span><select data-s="clsId" onchange="pickClass(this.value)" class="${s.clsId?'':'miss'}"><option value="">— 학급 선택 —</option>${ROSTER.map(c=>`<option value="${c.id}" ${s.clsId===c.id?'selected':''}>${esc(c.label)}</option>`).join('')}</select></label>
+   <label class="field"><span class="lbl">이름 <span class="req">*</span></span><select data-s="no" onchange="pickStudent(this.value)" class="${s.name?'':'miss'}" ${s.clsId?'':'disabled'}><option value="">${s.clsId?'— 이름 선택 —':'학급을 먼저 고르세요'}</option>${(clsOf(s.clsId)||{students:[]}).students.map(t=>`<option value="${t.no}" ${s.no===t.no?'selected':''}>${t.no}. ${esc(t.name)}</option>`).join('')}</select></label>
    <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label>
    <label class="field"><span class="lbl">제출 비밀번호 (숫자 4자리) <span class="req">*</span></span><input type="text" inputmode="numeric" maxlength="4" data-s="pin" value="${esc(s.pin||'')}" placeholder="예: 0315" class="${/^\d{4}$/.test(s.pin||'')?'':'miss'}"><small class="help">다른 기기·다음 시간에 “내 기록 불러오기”로 이어서 할 때 본인 확인용이에요. 잊지 않을 숫자로 정하세요.</small></label></div>
-   <p class="small" style="margin:0">${isTeacher()?'👩‍🏫 <b>교사 모드</b>라서 학생 정보를 넣지 않아도 모든 화면을 둘러볼 수 있어요. (학생은 별표 항목을 모두 입력해야 진행돼요)':'학번은 학년·반·번호를 포함해 써 주세요(예: 10315). 별표(*) 항목을 모두 입력해야 학습 단계로 넘어갈 수 있어요. 한 번 입력하면 이 기기에 저장되고, 제출할 때 다시 묻지 않아요.'}</p>
+   <p class="small" style="margin:0">${isTeacher()?'👩‍🏫 <b>교사 모드</b>라서 학생 정보를 넣지 않아도 모든 화면을 둘러볼 수 있어요. (학생은 별표 항목을 모두 입력해야 진행돼요)':`학급과 이름을 목록에서 고르고, 제출 비밀번호 4자리를 정하세요. 별표(*)를 모두 채워야 학습 단계로 넘어갈 수 있어요.${s.sid?` <b>내 번호: ${esc(s.sid)}</b>`:''}`}</p>
    <div class="hint ${storageWeak?'warn':'info'}" style="margin-top:4px">${storageWeak?'⚠️ 이 브라우저는 기록을 오래 보관하지 못해요(카카오톡·네이버 앱 안의 브라우저이거나 시크릿 모드). <b>수업이 끝나기 전에 꼭 📤 제출</b>하고, 다음 시간에는 아래 “내 기록 불러오기”로 이어서 하세요. 가능하면 Chrome·Safari로 열어 주세요.':'💡 수업이 끊길 때는 그 자리에서 <b>📤 제출</b>을 누르세요. 다음 시간에 같은 기기면 자동으로 이어지고, 다른 기기면 아래 “내 기록 불러오기”로 이어서 할 수 있어요.'}</div>
    <p style="margin:10px 0 0"><button class="btn sm" onclick="loadMine()">📥 내 기록 불러오기 (제출한 기록에서)</button> ${S.lastSubmit?`<span class="small">마지막 제출: ${esc(S.lastSubmit.replace('T',' ').slice(0,16))}</span>`:''}</p></div>
   <div class="card"><h3>차시별 학습 계획</h3><div style="overflow:auto"><table class="lessons"><tr><th style="width:52px">차시</th><th>주제 · 학습 목표</th><th style="width:38%">활동 화면</th><th style="width:64px">상태</th></tr>
@@ -1060,7 +1098,7 @@ function bindMain(){if(main.dataset.bound)return;main.dataset.bound='1';
   main.addEventListener('mousedown',e=>{if(e.target.closest('.chip'))e.preventDefault()});
 
   main.oninput=e=>{const t=e.target;
-    if(t.dataset.s){S.student[t.dataset.s]=t.value;save();renderWho();if(t.dataset.s!=='date')t.classList.toggle('miss',t.dataset.s==='pin'?!/^\d{4}$/.test(t.value):!t.value.trim());return}
+    if(t.dataset.s){if(t.tagName==='SELECT')return;S.student[t.dataset.s]=t.value;save();renderWho();if(t.dataset.s!=='date')t.classList.toggle('miss',t.dataset.s==='pin'?!/^\d{4}$/.test(t.value):!t.value.trim());return}
     if(t.dataset.k&&S.cur){st(S.cur)[t.dataset.k]=t.value;save();renderSidebar();return}
     if(t.dataset.qi!==undefined&&t.type==='text'&&S.cur){const k=t.dataset.qk||'quiz';const o=st(S.cur)[k]||(st(S.cur)[k]={});o[t.dataset.qi]=t.value;save();return}
     if(t.dataset.rk&&S.cur){const o=st(S.cur)[t.dataset.rk]||(st(S.cur)[t.dataset.rk]={});o[t.dataset.ri]=t.value;save();return}};
@@ -1106,7 +1144,7 @@ const SYM=['≥','≤','≠','²','³','√','¬','~','→','⇒','⇔','∀','�
 
 /* ================= 보고서 ================= */
 /* 구글 시트 '답변' 탭용: 학생 한 명 = 한 줄, 필수 답변마다 한 열 */
-function flatAnswers(state){const secs=collect(state);const s=state.student;const A=[['학번',s.sid],['이름',s.name],['날짜',s.date],['완료 단계',`${secs.filter(x=>x.done).length}/${STEPS.length}`],['완료 차시',`${LESSONS.filter(L=>L.steps.every(id=>(state.steps[id]||{}).done)).length}/${LESSONS.length}`]];
+function flatAnswers(state){const secs=collect(state);const s=state.student;const A=[['학번',s.sid],['이름',s.name],['학급',s.cls||''],['번호',s.no||''],['날짜',s.date],['완료 단계',`${secs.filter(x=>x.done).length}/${STEPS.length}`],['완료 차시',`${LESSONS.filter(L=>L.steps.every(id=>(state.steps[id]||{}).done)).length}/${LESSONS.length}`]];
   secs.forEach(sec=>{const pre=`${sec.n}.${sec.title}`;let grp='';A.push([`${pre} · 상태`,sec.done?'완료':sec.started?'진행 중':'미작성']);
     sec.items.forEach(it=>{if(it.h){grp=it.h.startsWith('초안')?'초안':it.h.startsWith('고쳐')?'수정':it.h;return}A.push([`${pre} · ${grp?'['+grp+'] ':''}${it.label}`,it.value||''])});
     if(sec.checks)A.push([`${pre} · 자기 점검`,`${sec.checks.filter(c=>c.ok).length}/${sec.checks.length}`]);
@@ -1199,7 +1237,64 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🔐 교사 모드</h3>
+const STUURL=location.origin+location.pathname;
+let BCLS=null,BTIMER=null;
+function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
+function findSub(clsId,no,name){return T.find(x=>{const st_=x.student||{};return (st_.clsId===clsId&&String(st_.no)===String(no))||(st_.name===name&&(!st_.clsId||st_.clsId===clsId))})}
+function progOf(x){const done=STEPS.filter(z=>(x.steps[z.id]||{}).done).length;const les=LESSONS.map(L=>L.steps.every(id=>(x.steps[id]||{}).done));return {done,total:STEPS.length,les,lesDone:les.filter(Boolean).length}}
+function boardHTML(){const c=clsOf(bclass());if(!c)return '';
+  const rows=c.students.map(t=>{const sub=findSub(c.id,t.no,t.name);const pr=sub?progOf(sub):null;
+    const pct=pr?Math.round(pr.done/pr.total*100):0;
+    const at=sub&&sub.submittedAt?String(sub.submittedAt).replace('T',' ').slice(5,16):'';
+    return `<button class="scard ${!sub?'none':(pr.done===pr.total?'done':'')}" onclick="${sub?`showStudent('${c.id}','${t.no}')`:`alert('${esc(t.name)} 학생은 아직 제출한 기록이 없어요.')`}">
+      <div class="nm"><i>${t.no}</i>${esc(t.name)}</div>
+      ${sub?`<div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="mt"><span>${pr.done}/${pr.total}단계</span><span>${pr.lesDone}/${LESSONS.length}차시</span></div>
+      <div class="les">${pr.les.map(b=>`<span class="${b?'on':''}"></span>`).join('')}</div>
+      <div class="mt" style="margin-top:6px"><span>최근 제출</span><span>${esc(at)}</span></div>`
+      :`<div class="bar"><i style="width:0"></i></div><div class="mt"><span>아직 제출 없음</span><span></span></div><div class="les">${LESSONS.map(()=>'<span></span>').join('')}</div><div class="mt" style="margin-top:6px"><span>&nbsp;</span><span></span></div>`}
+    </button>`}).join('');
+  const subs=c.students.filter(t=>findSub(c.id,t.no,t.name));
+  const fin=subs.filter(t=>{const x=findSub(c.id,t.no,t.name);return progOf(x).done===STEPS.length});
+  const avg=subs.length?Math.round(subs.reduce((a,t)=>a+progOf(findSub(c.id,t.no,t.name)).done,0)/subs.length*10)/10:0;
+  const extra=T.filter(x=>!c.students.some(t=>findSub(c.id,t.no,t.name)===x)&&(x.student||{}).clsId===c.id);
+  return `<div class="bstat"><div>제출 <b>${subs.length}</b> / ${c.students.length}명</div><div>완주 <b>${fin.length}</b>명</div><div>평균 진행 <b>${avg}</b>/${STEPS.length}단계</div><div>미제출 <b>${c.students.length-subs.length}</b>명</div></div>
+  <div class="board">${rows}</div>
+  ${extra.length?`<p class="small" style="margin-top:10px">⚠️ 명단과 이름이 다른 제출 ${extra.length}건: ${extra.map(x=>esc(x.student.name)).join(', ')}</p>`:''}`}
+function showStudent(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x.no===no);const x=findSub(clsId,no,t.name);if(!x)return;
+  $('#tview').innerHTML=`<div class="noprint" style="margin:14px 0 6px"><button class="btn sm" onclick="window.print()">🖨 인쇄</button> <button class="btn sm" onclick="exportDocx(SUB('${clsId}','${no}'))">📝 Word</button> <button class="btn sm" onclick="$('#tview').innerHTML=''">닫기</button></div>`+reportHTML(x);
+  $('#tview').scrollIntoView({behavior:'smooth'})}
+function SUB(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x.no===no);return findSub(clsId,no,t.name)}
+function drawQR(){const el=$('#qr');if(!el)return;el.innerHTML='';
+  if(typeof QRCode==='undefined'){el.innerHTML='<span class="small">QR 생성기를 불러오지 못했어요(인터넷 확인). 아래 주소를 직접 알려 주세요.</span>';return}
+  new QRCode(el,{text:STUURL,width:190,height:190,correctLevel:QRCode.CorrectLevel.M})}
+function autoRefresh(on){if(BTIMER){clearInterval(BTIMER);BTIMER=null}if(on)BTIMER=setInterval(()=>fetchSubmissions(true),60000);render()}
+function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🏫 교사 보드</h3>
+  <div class="qrbox">
+    <div class="qrwrap"><div id="qr"></div><div class="lk">${esc(STUURL)}</div></div>
+    <div style="flex:1;min-width:230px">
+      <p class="small" style="margin:0 0 8px">학생들에게 이 QR을 보여 주면 카메라로 찍어 바로 들어올 수 있어요.</p>
+      <p><label class="lbl" style="font-size:13px">학급 보기</label>
+      <select onchange="BCLS=this.value;render()" style="border:1px solid #cfd4e2;border-radius:8px;padding:6px 10px">${ROSTER.map(c=>`<option value="${c.id}" ${bclass()===c.id?'selected':''}>${esc(c.label)} (${c.students.length}명)</option>`).join('')}</select></p>
+      <p><button class="btn sm primary" onclick="fetchSubmissions()">🔄 새로고침 (제출함 불러오기)</button>
+      <button class="btn sm" onclick="autoRefresh(${BTIMER?'false':'true'})">${BTIMER?'⏸ 자동 새로고침 끄기':'▶ 1분마다 자동 새로고침'}</button></p>
+      <p class="small">${T.length?`불러온 제출 <b>${T.length}</b>건`:'아직 제출을 불러오지 않았어요. “새로고침”을 눌러 주세요.'}</p>
+    </div>
+  </div></div>
+  <div class="card noprint">${boardHTML()}</div>
+  <div class="card noprint"><h3>📄 전체 기록</h3><p><button class="btn sm" onclick="printAll()">🖨 전체 보고서 인쇄</button> <button class="btn sm" onclick="exportCSV()">📊 CSV 내려받기</button> <button class="btn sm" onclick="window.open('${esc(SHEET_URL)}','_blank')">📊 구글 시트 열기</button></p></div>
+  <div id="tview"></div>
+  <details class="card noprint"><summary><b>⚙️ 설정 · 파일로 모으기 · 교사 모드</b></summary>
+  <p class="small" style="margin-top:10px">${isTeacher()?'교사 모드가 <b>켜져</b> 있어요. 각 단계 끝에 <b>교과서 문제</b>가 표시되고, 학생 정보 없이 모든 화면을 둘러볼 수 있어요.':'교과서 문제 세트와 전체 둘러보기는 교사 모드에서만 가능해요.'}</p>
+  <p>${isTeacher()?`<button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button>`:`<button class="btn sm primary" onclick="enterTeacher()">교사 모드 켜기</button>`}
+   <button class="btn sm" onclick="const u=prompt('제출 주소(Apps Script 웹 앱 URL)',submitUrl());if(u===null)return;try{u.trim()?localStorage.setItem('myeongje-submit-url',u.trim()):localStorage.removeItem('myeongje-submit-url')}catch(e){}render()">제출 주소 설정</button></p>
+  <p class="small" style="margin-top:10px">학생이 “저장”으로 내려받은 JSON 파일을 올려서 합칠 수도 있어요.</p>
+  <div class="drop" id="drop">여기에 JSON 파일들을 끌어다 놓거나 <button class="btn sm" onclick="$('#fileMulti').value='';$('#fileMulti').click()">파일 선택</button></div>
+  ${T.length?`<p style="margin-top:10px"><button class="btn sm" onclick="T=[];render()">불러온 제출 비우기</button></p>`:''}
+  </details>`;
+  setTimeout(drawQR,60);
+  const dz=$('#drop');if(dz){['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over')}));dz.addEventListener('drop',e=>loadMany(e.dataTransfer.files))}}
+function renderTeacherOld(){main.innerHTML=`<div class="card noprint"><h3>🔐 교사 모드</h3>
   ${isTeacher()?`<p class="small">교사 모드가 <b>켜져</b> 있어요. 각 단계 끝에 <b>교과서 문제</b> 카드가 표시되고, 풀면 활동 기록에도 들어가요. 학생 화면에는 보이지 않아요.</p><button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button>`
   :`<p class="small">교과서 문제 세트는 교사 모드에서만 표시돼요. 코드를 입력하면 이 브라우저에서 교사 모드가 켜져요. (수업 중 화면에 띄워 함께 풀 때 사용)</p><button class="btn sm primary" onclick="enterTeacher()">교사 모드 켜기</button>`}</div>
   <div class="card teacher noprint"><h3>👩‍🏫 교사용 취합</h3>
@@ -1211,8 +1306,7 @@ function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🔐 교�
   <div style="overflow:auto"><table class="list"><tr><th>#</th><th>학번</th><th>이름</th><th>완료</th><th>차시</th><th>나의 명제 p</th><th>p → q</th><th>어려웠던 단계</th><th>질문</th><th></th></tr>
   ${T.map((x,i)=>{const secs=collect(x);const d=secs.filter(z=>z.done).length;const s10=x.steps.s11||{};return `<tr><td>${i+1}</td><td>${esc(x.student.sid)}</td><td>${esc(x.student.name)}</td><td>${d}/${STEPS.length}</td><td>${LESSONS.filter(L=>L.steps.every(id=>(x.steps[id]||{}).done)).length}/${LESSONS.length}</td><td>${esc(getPof(x))}</td><td>${esc((x.steps.s6||{}).imp||'')}</td><td>${esc(s10.hard||'')}</td><td>${esc(s10.question||'')}</td><td><button class="btn sm" onclick="showOne(${i})">보고서</button></td></tr>`}).join('')}</table></div>`:''}
   </div><div id="tview"></div>`;
-  const dz=$('#drop');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over')}));
-  dz.addEventListener('drop',e=>loadMany(e.dataTransfer.files))}
+  }
 $('#fileMulti').onchange=e=>loadMany(e.target.files);
 async function loadMany(files){let bad=0;for(const f of files){try{const j=JSON.parse(await f.text());if(j.steps&&j.student)T.push(j);else bad++}catch(e){bad++}}
   T.sort((a,b)=>String(a.student.sid).localeCompare(String(b.student.sid),'ko',{numeric:true}));render();if(bad)alert(`${bad}개 파일은 형식이 맞지 않아 건너뛰었어요.`)}
