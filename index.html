@@ -178,8 +178,7 @@ code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f2f6;
 .qrbox{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .qrbox #qr img,.qrbox #qr canvas{display:block;border:6px solid #fff;border-radius:8px}
 .qrwrap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
-.qrwrap .shorturl{font-size:17px;font-weight:700;color:var(--brand);margin-top:6px;letter-spacing:.01em}
-.qrwrap .lk{font-size:11px;color:var(--muted);word-break:break-all;max-width:210px;margin-top:2px}
+.qrwrap .lk{font-size:12px;color:var(--muted);word-break:break-all;max-width:210px;margin-top:4px}
 @media print{.board{grid-template-columns:repeat(4,1fr)}}
 .teacher table.list{width:100%;border-collapse:collapse;font-size:14px}
 .teacher table.list th,.teacher table.list td{border:1px solid var(--line);padding:6px 8px;text-align:left}
@@ -1238,10 +1237,8 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-09-29c';
+const APPVER='2026-09-29b';
 const STUURL=location.origin+location.pathname;
-/* 학생이 손으로 칠 수 있는 짧은 주소 (tinyurl → 위 주소로 연결) */
-const SHORTURL='tinyurl.com/myeongje';
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
 function findSub(clsId,no,name){return T.find(x=>{const st_=x.student||{};return (st_.clsId===clsId&&String(st_.no)===String(no))||(st_.name===name&&(!st_.clsId||st_.clsId===clsId))})}
@@ -1274,17 +1271,15 @@ function drawQR(tries){const el=$('#qr');if(!el)return;
     el.innerHTML='<div class="small" style="max-width:200px">QR을 만들지 못했어요. 아래 주소를 칠판에 적어 주세요.<br><button class="btn sm" style="margin-top:6px" onclick="drawQR(0)">다시 시도</button></div>';return}
   el.innerHTML='';try{new QRCode(el,{text:STUURL,width:190,height:190,correctLevel:QRCode.CorrectLevel.M})}catch(e){el.innerHTML='<span class="small">QR 오류: '+esc(e.message)+'</span>'}}
 function qrBig(){const w=window.open('','_blank','width=520,height=640');if(!w){alert('팝업이 차단되었어요. 브라우저에서 팝업을 허용해 주세요.');return}
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div style="font-size:30px;font-weight:700;margin:10px 0 6px">${SHORTURL}</div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
 function autoRefresh(on){if(BTIMER){clearInterval(BTIMER);BTIMER=null}if(on)BTIMER=setInterval(()=>fetchSubmissions(true),60000);render()}
 function renderTeacher(){main.innerHTML=`<div class="card noprint"><h3>🏫 교사 보드</h3>
   <div class="qrbox">
-    <div class="qrwrap"><div id="qr"></div>
-      <div class="shorturl">${esc(SHORTURL)}</div>
-      <div class="lk">${esc(STUURL)}</div>
+    <div class="qrwrap"><div id="qr"></div><div class="lk">${esc(STUURL)}</div>
       <p style="margin:8px 0 0"><button class="btn sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(STUURL).then(()=>alert('학생용 주소를 복사했어요.'),()=>prompt('주소를 복사하세요',STUURL))||prompt('주소를 복사하세요',STUURL)">📋 주소 복사</button>
       <button class="btn sm" onclick="qrBig()">🔍 QR 크게</button></p></div>
     <div style="flex:1;min-width:230px">
-      <p class="small" style="margin:0 0 8px">학생들에게 이 QR을 보여 주면 카메라로 찍어 바로 들어올 수 있어요. QR이 안 될 때는 짧은 주소 <b>${esc(SHORTURL)}</b>를 칠판에 적어 주세요.</p>
+      <p class="small" style="margin:0 0 8px">학생들에게 이 QR을 보여 주면 카메라로 찍어 바로 들어올 수 있어요.</p>
       <p><label class="lbl" style="font-size:13px">학급 보기</label>
       <select onchange="BCLS=this.value;render()" style="border:1px solid #cfd4e2;border-radius:8px;padding:6px 10px">${ROSTER.map(c=>`<option value="${c.id}" ${bclass()===c.id?'selected':''}>${esc(c.label)} (${c.students.length}명)</option>`).join('')}</select></p>
       <p><button class="btn sm primary" onclick="fetchSubmissions()">🔄 새로고침 (제출함 불러오기)</button>
