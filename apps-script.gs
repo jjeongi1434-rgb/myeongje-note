@@ -11,11 +11,27 @@
  */
 const KEY = '명제교사';
 const SHEET = '제출';
+const ANS_SHEET = '답변';
 const CHUNK = 45000; // 셀 하나에 넣을 최대 글자 수 (구글 시트 한도 50,000)
 
 function doPost(e) {
   try {
     const d = JSON.parse(e.postData.contents);
+
+    // 제출함 비우기 (앱의 "제출함 비우기" 버튼에서 호출)
+    if (d.action === 'reset') {
+      if (String(d.key || '') !== KEY) return out_({ ok: false, error: 'key' });
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      let n = 0;
+      [SHEET, ANS_SHEET].forEach(function (name) {
+        const sh = ss.getSheetByName(name);
+        if (!sh) return;
+        const last = sh.getLastRow();
+        if (last > 1) { n += last - 1; sh.deleteRows(2, last - 1); }   // 머리글(1행)은 남김
+      });
+      return out_({ ok: true, cleared: n });
+    }
+
     const st = d.student || {};
     const sh = sheet_();
     const json = JSON.stringify(d.state || {});
@@ -34,7 +50,6 @@ function doPost(e) {
 }
 
 /* '답변' 탭: 학생 한 명 = 한 줄, 필수 답변마다 한 열. 같은 학번+이름이 다시 제출하면 그 줄을 덮어쓴다 */
-const ANS_SHEET = '답변';
 function upsertAnswers_(answers) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(ANS_SHEET);
