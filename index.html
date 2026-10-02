@@ -1272,7 +1272,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-10-02b';
+const APPVER='2026-10-02c';
 const STUURL=location.origin+location.pathname;
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
@@ -1302,9 +1302,14 @@ function showStudent(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x
   $('#tview').scrollIntoView({behavior:'smooth'})}
 function SUB(clsId,no){const c=clsOf(clsId);const t=c.students.find(x=>x.no===no);return findSub(clsId,no,t.name)}
 function drawQR(tries){const el=$('#qr');if(!el)return;
-  if(typeof QRCode==='undefined'){if((tries||0)<25){el.innerHTML='<span class="small">QR 만드는 중…</span>';setTimeout(()=>drawQR((tries||0)+1),300);return}
-    el.innerHTML='<div class="small" style="max-width:200px">QR을 만들지 못했어요. 아래 주소를 칠판에 적어 주세요.<br><button class="btn sm" style="margin-top:6px" onclick="drawQR(0)">다시 시도</button></div>';return}
-  el.innerHTML='';try{new QRCode(el,{text:STUURL,width:190,height:190,correctLevel:QRCode.CorrectLevel.M})}catch(e){el.innerHTML='<span class="small">QR 오류: '+esc(e.message)+'</span>'}}
+  /* 1순위: 저장소에 들어 있는 고정 QR 이미지 (라이브러리·인터넷 상황과 무관) */
+  const img=new Image();
+  img.onload=()=>{el.innerHTML='';img.style.width='100%';img.style.maxWidth=(PRESENT?'230px':'190px');img.style.height='auto';img.style.imageRendering='pixelated';el.appendChild(img)};
+  img.onerror=()=>{ /* 2순위: JS 라이브러리로 즉석 생성 */
+    if(typeof QRCode==='undefined'){if((tries||0)<20){setTimeout(()=>drawQR((tries||0)+1),300);return}
+      el.innerHTML='<div class="small" style="max-width:200px">QR을 불러오지 못했어요. 아래 주소를 칠판에 적어 주세요.<br><button class="btn sm" style="margin-top:6px" onclick="drawQR(0)">다시 시도</button></div>';return}
+    el.innerHTML='';try{new QRCode(el,{text:STUURL,width:PRESENT?230:190,height:PRESENT?230:190,correctLevel:QRCode.CorrectLevel.M})}catch(e){el.innerHTML='<span class="small">QR 오류</span>'}};
+  img.alt='학생용 QR';img.src='qr.png?v='+APPVER;}
 async function resetBox(){const url=submitUrl();if(!url){alert('제출 주소가 설정되지 않았어요.');return}
   if(!isTeacher()){askCode('먼저 교사 코드를 입력해 주세요.');return}
   const n=T.length;
@@ -1358,7 +1363,8 @@ function renderPresent(){const c=clsOf(bclass());const subs=c?c.students.filter(
     <span class="upd">${LASTUPD?'최근 갱신 '+esc(LASTUPD):'불러오는 중…'}</span><span class="clock" id="pclock">--:--:--</span></div>
    <div class="pmain">
      <div>
-       <div class="pqr"><div id="qr"></div><div class="hint">QR을 찍어 들어오세요</div><div class="lk">${esc(STUURL)}</div></div>
+       <div class="pqr"><div id="qr"></div><div class="hint">QR을 찍어 들어오세요</div><div class="lk">${esc(STUURL)}</div>
+         <p style="margin:8px 0 0"><button class="btn sm" onclick="window.open('qr.html','_blank')">🔍 QR만 크게 보기</button></p></div>
        <p style="margin-top:12px"><select onchange="BCLS=this.value;render()" style="width:100%;border:1px solid #cfd4e2;border-radius:10px;padding:8px 10px;font-size:15px">${ROSTER.map(x=>`<option value="${x.id}" ${bclass()===x.id?'selected':''}>${esc(x.label)}</option>`).join('')}</select></p>
        <p><button class="btn sm" style="width:100%" onclick="fetchSubmissions()">🔄 지금 새로고침</button></p>
      </div>
@@ -1374,7 +1380,7 @@ function renderTeacher(){if(PRESENT)return renderPresent();
   <div class="qrbox">
     <div class="qrwrap"><div id="qr"></div><div class="lk">${esc(STUURL)}</div>
       <p style="margin:8px 0 0"><button class="btn sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(STUURL).then(()=>alert('학생용 주소를 복사했어요.'),()=>prompt('주소를 복사하세요',STUURL))||prompt('주소를 복사하세요',STUURL)">📋 주소 복사</button>
-      <button class="btn sm" onclick="qrBig()">🔍 QR 크게</button></p></div>
+      <button class="btn sm" onclick="window.open('qr.html','_blank')">🔍 QR 크게</button></p></div>
     <div style="flex:1;min-width:230px">
       <p class="small" style="margin:0 0 8px">학생들에게 이 QR을 보여 주면 카메라로 찍어 바로 들어올 수 있어요.</p>
       <p><label class="lbl" style="font-size:13px">학급 보기</label>
