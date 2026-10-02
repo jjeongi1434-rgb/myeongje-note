@@ -994,7 +994,7 @@ function isTeacher(){try{return localStorage.getItem(TKEY)==='1'}catch(e){return
 function setTeacher(on){try{on?localStorage.setItem(TKEY,'1'):localStorage.removeItem(TKEY)}catch(e){}render()}
 function enterTeacher(){const c=prompt('교사 코드를 입력하세요. (명제교사 또는 mj2026)');if(c===null)return;if(okCode(c))setTeacher(true);else alert('코드가 맞지 않아요.')}
 (function(){try{const u=new URL(location.href);const b=u.searchParams.get('board');
-  if(b!==null&&okCode(b)){localStorage.setItem(TKEY,'1');sessionStorage.setItem('myeongje-present','1');u.searchParams.delete('board');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}
+  if(b!==null&&okCode(b)){localStorage.setItem(TKEY,'1');u.searchParams.delete('board');u.searchParams.set('present','1');history.replaceState(null,'',u.pathname+'?'+u.searchParams.toString()+u.hash)}
   const t=u.searchParams.get('teacher');if(t!==null){if(okCode(t))localStorage.setItem(TKEY,'1');else if(t==='off')localStorage.removeItem(TKEY);u.searchParams.delete('teacher');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}})();
 function hintSentence(s,type){const h=[];const t=s.trim();const notP=type==='명제 아님';
   if(!notP&&/\?$|일까요?$|입니까$|인가요?$|습니까$/.test(t))h.push('물음표나 “~일까?”로 끝나요. 질문은 참·거짓을 판별할 수 없으니 명제가 아니에요.');
@@ -1272,7 +1272,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-09-29g';
+const APPVER='2026-10-02a';
 const STUURL=location.origin+location.pathname;
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
@@ -1324,6 +1324,7 @@ function tryCode(){const el=$('#tcode');const v=el?el.value:'';
   try{localStorage.setItem(TKEY,'1')}catch(e){}
   S.view='teacher';save();presentMode(true)}
 function presentMode(on){PRESENT=on;document.body.classList.toggle('present',on);
+  try{const u=new URL(location.href);if(on)u.searchParams.set('present','1');else u.searchParams.delete('present');history.replaceState(null,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams.toString():'')+u.hash)}catch(e){}
   if(on){autoRefresh(true);if(!T.length)fetchSubmissions();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
     if(!CLOCKT)CLOCKT=setInterval(tickClock,1000)}
   else{if(CLOCKT){clearInterval(CLOCKT);CLOCKT=null}try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}}
@@ -1405,7 +1406,7 @@ function exportCSV(){const head=['학번','이름','날짜','완료단계','명�
 
 /* ================= 시작 ================= */
 bindMain();render();
-try{if(sessionStorage.getItem('myeongje-present')==='1'){sessionStorage.removeItem('myeongje-present');setTimeout(startPresent,150)}}catch(e){}
+try{const sp=new URL(location.href).searchParams;if(sp.get('present')==='1'||sessionStorage.getItem('myeongje-present')==='1'){sessionStorage.removeItem('myeongje-present');setTimeout(startPresent,150)}}catch(e){}
 </script>
 </body>
 </html>
