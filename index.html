@@ -1272,7 +1272,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-10-02c';
+const APPVER='2026-10-02d';
 const STUURL=location.origin+location.pathname;
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
@@ -1312,22 +1312,14 @@ function drawQR(tries){const el=$('#qr');if(!el)return;
   img.alt='학생용 QR';img.src='qr.png?v='+APPVER;}
 async function resetBox(){const url=submitUrl();if(!url){alert('제출 주소가 설정되지 않았어요.');return}
   if(!isTeacher()){askCode('먼저 교사 코드를 입력해 주세요.');return}
-  const n=T.length;
-  if(!confirm(`제출함을 모두 비웁니다.
-
-· 구글 시트의 「제출」·「답변」 탭 내용이 지워져요 (머리글은 남아요)
-· 지금 불러온 제출: ${n}건
-· 되돌릴 수 없어요
-
-계속할까요?`))return;
+  const msg='제출함을 모두 비웁니다.\n\n· 구글 시트의 「제출」·「답변」 탭 내용이 지워져요 (머리글은 남아요)\n· 지금 불러온 제출: '+T.length+'건\n· 되돌릴 수 없어요\n\n계속할까요?';
+  if(!confirm(msg))return;
   if(!confirm('정말 지울까요? 이 작업은 되돌릴 수 없습니다.'))return;
   try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'reset',key:TEACHER_CODE})});
     const j=await r.json();
-    if(!j.ok){alert(j.error==='key'?'교사 코드가 시트 설정과 달라요. Apps Script의 KEY를 확인해 주세요.':'비우지 못했어요. ('+(j.error||'')+')
-
-Apps Script를 최신 코드로 다시 배포했는지 확인해 주세요.');return}
+    if(!j.ok){const why=j.error==='key'?'교사 코드가 시트 설정과 달라요. Apps Script의 KEY를 확인해 주세요.':'비우지 못했어요. Apps Script를 최신 코드로 다시 배포했는지 확인해 주세요. ('+(j.error||'')+')';alert(why);return}
     T=[];LASTUPD=new Date().toTimeString().slice(0,8);render();
-    alert(`제출함을 비웠어요. (지운 줄 ${j.cleared ?? 0}개)`)}
+    alert('제출함을 비웠어요. (지운 줄 '+(j.cleared||0)+'개)')}
   catch(e){alert('비우지 못했어요. 인터넷 연결과 Apps Script 배포 상태를 확인해 주세요.')}}
 function qrBig(){const w=window.open('','_blank','width=520,height=640');if(!w){alert('팝업이 차단되었어요. 브라우저에서 팝업을 허용해 주세요.');return}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
