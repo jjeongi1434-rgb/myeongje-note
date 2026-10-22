@@ -2,7 +2,7 @@
    항상 "네트워크 먼저": 인터넷이 되면 늘 최신 화면을 보여 주고,
    인터넷이 끊겼을 때만 저장해 둔 화면을 꺼내 씁니다.
    (옛 버전이 남아 앱이 고장 나는 일을 막기 위한 방식입니다.) */
-const VER = '2026-10-22b';
+const VER = '2026-10-22c';
 const CACHE = 'myeongje-' + VER;
 const CORE = [
   './', './index.html', './board.html', './qr.html',

@@ -1306,7 +1306,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-10-22b';
+const APPVER='2026-10-22c';
 const STUURL=location.origin+location.pathname;
 const BASEURL=location.origin+location.pathname.replace(/[^/]*$/,'');
 let BCLS=null,BTIMER=null;
@@ -1480,7 +1480,7 @@ function pwaBar(){const b=document.getElementById('pwabar');if(!b)return;
   const t=document.getElementById('pwatxt'),y=document.getElementById('pwayes');
   if(PWAEV){t.innerHTML='📱 <b>홈 화면에 앱으로 추가</b>하면 다음 시간에 주소 없이 바로 열 수 있어요.';y.textContent='앱으로 설치';y.hidden=false}
   else if(pwaIOS()){t.innerHTML='📱 아이폰은 아래 <b>공유 버튼</b>(⬆️)을 누르고 <b>“홈 화면에 추가”</b>를 고르면 앱처럼 쓸 수 있어요.';y.hidden=true}
-  else return;
+  else{t.innerHTML='📱 브라우저 메뉴(⋮)에서 <b>“앱 설치”</b> 또는 <b>“홈 화면에 추가”</b>를 누르면 다음 시간에 아이콘만 눌러 바로 열 수 있어요.';y.hidden=true}
   b.hidden=false;pwaLift()}
 function pwaLift(){const b=document.getElementById('pwabar');if(!b||b.hidden)return;
   const p=document.getElementById('palette');const h=p?p.offsetHeight:0;b.style.bottom=(h+12)+'px'}
