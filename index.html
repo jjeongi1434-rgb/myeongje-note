@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>명제 탐구 노트</title>
 <meta name="description" content="고등학교 수학 '명제' 단원 학습용 웹앱. 학생이 직접 명제를 만들고 9단계로 탐구하며 활동 기록을 남깁니다.">
+<meta name="theme-color" content="#3f51b5">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="명제노트">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -234,6 +242,11 @@ body.present .card{border:0;box-shadow:none;border-radius:0;margin:0;padding:0}
   main{padding:0;max-width:none}
   .report{border:0;padding:0;max-width:none}
 }
+.pwabar{position:fixed;left:12px;right:12px;bottom:12px;z-index:60;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--brand);border-radius:12px;padding:10px 12px;box-shadow:0 6px 24px rgba(20,30,60,.18);font-size:14px}
+.pwabar[hidden]{display:none}
+.pwabar span{flex:1;min-width:180px;line-height:1.45}
+@media print{.pwabar{display:none!important}}
 </style>
 </head>
 <body>
@@ -254,6 +267,11 @@ body.present .card{border:0;box-shadow:none;border-radius:0;margin:0;padding:0}
 <div class="palette" id="palette"></div>
 <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
 <input type="file" id="fileMulti" accept=".json,application/json" multiple style="display:none">
+<div class="pwabar noprint" id="pwabar" hidden>
+  <span id="pwatxt"></span>
+  <button class="btn sm primary" id="pwayes">앱으로 설치</button>
+  <button class="btn sm" id="pwano">닫기</button>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.iife.js" defer></script>
 <script src="qrcode.min.js" defer onerror="this.onerror=null;var t=document.createElement('script');t.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';t.defer=true;document.head.appendChild(t)"></script>
 <script>
@@ -1007,7 +1025,7 @@ async function fetchSubmissions(quiet){const url=submitUrl();if(!url){if(!quiet)
 const TKEY='myeongje-teacher';
 function isTeacher(){try{return localStorage.getItem(TKEY)==='1'}catch(e){return false}}
 function setTeacher(on){try{on?localStorage.setItem(TKEY,'1'):localStorage.removeItem(TKEY)}catch(e){}render()}
-function enterTeacher(){const c=prompt('교사 코드를 입력하세요. (명제교사 또는 mj2026)');if(c===null)return;if(okCode(c))setTeacher(true);else alert('코드가 맞지 않아요.')}
+function enterTeacher(){askCode('','board')}
 (function(){try{const u=new URL(location.href);const b=u.searchParams.get('board');
   if(b!==null&&okCode(b)){localStorage.setItem(TKEY,'1');u.searchParams.delete('board');u.searchParams.set('present','1');history.replaceState(null,'',u.pathname+'?'+u.searchParams.toString()+u.hash)}
   const t=u.searchParams.get('teacher');if(t!==null){if(okCode(t))localStorage.setItem(TKEY,'1');else if(t==='off')localStorage.removeItem(TKEY);u.searchParams.delete('teacher');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}})();
@@ -1046,7 +1064,8 @@ function renderHome(){const s=S.student;
   <tr><th>Ⅴ. 교과서로 확장하기</th><td>정의·정리와 증명(대우·귀류법), 절대부등식</td></tr>
   <tr><th>Ⅵ. 마무리</th><td>성찰·자기평가 → <b>활동 기록</b> 인쇄 / Word 제출</td></tr></table>
   <p class="small" style="margin-top:8px">수업은 아래 <b>10차시</b>로 진행돼요. 각 차시의 첫 화면에 학습 목표가 표시되고, 수업이 끝나거나 끊길 때는 상단의 <b>📤 제출</b>을 누르세요.</p>
-  <div class="hint info">✍️ 입력한 내용은 이 기기에 자동 저장되고, <b>📤 제출</b>을 누르면 선생님 제출함에 보관돼요. 다른 기기에서 이어서 하려면 아래 <b>내 기록 불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div></div>
+  <div class="hint info">✍️ 입력한 내용은 이 기기에 자동 저장되고, <b>📤 제출</b>을 누르면 선생님 제출함에 보관돼요. 다른 기기에서 이어서 하려면 아래 <b>내 기록 불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div>
+  <p class="noprint" style="text-align:right;margin:10px 0 0"><button class="btn sm" onclick="${isTeacher()?`go('teacher')`:`enterTeacher()`}">👩‍🏫 선생님용</button></p></div>
   ${isTeacher()?`<div class="card noprint" style="border-color:var(--brand)"><h3>👩‍🏫 교사 모드로 보는 중</h3><p class="small">학생 정보 없이 모든 단계를 둘러볼 수 있고, 각 단계 끝에 <b>교과서 문제</b>가 함께 표시돼요. 단계 안의 내용은 <b>초안 제출 → 판정 기준</b> 순서라, 판정 기준·모범 답안을 바로 보려면 각 화면의 <b>“기준 미리 보기”</b> 버튼을 누르세요.</p><p><button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button> <button class="btn sm" onclick="go('teacher')">👩‍🏫 교사용 취합으로</button></p></div>`:''}
   <div class="card"><h3>학생 정보</h3><div class="grid2">
    <label class="field"><span class="lbl">학급 <span class="req">*</span></span><select data-s="clsId" onchange="pickClass(this.value)" class="${s.clsId?'':'miss'}"><option value="">— 학급 선택 —</option>${ROSTER.map(c=>`<option value="${c.id}" ${s.clsId===c.id?'selected':''}>${esc(c.label)}</option>`).join('')}</select></label>
@@ -1287,8 +1306,9 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-10-11a';
+const APPVER='2026-10-22b';
 const STUURL=location.origin+location.pathname;
+const BASEURL=location.origin+location.pathname.replace(/[^/]*$/,'');
 let BCLS=null,BTIMER=null;
 function bclass(){return BCLS||(ROSTER[0]&&ROSTER[0].id)}
 function findSub(clsId,no,name){return T.find(x=>{const st_=x.student||{};return (st_.clsId===clsId&&String(st_.no)===String(no))||(!!name&&st_.name===name&&(!st_.clsId||st_.clsId===clsId))})}
@@ -1341,23 +1361,26 @@ function qrBig(){const w=window.open('','_blank','width=520,height=640');if(!w){
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>명제 탐구 노트 QR</title><scr`+`ipt src="${location.origin+location.pathname.replace(/[^/]*$/,'')}qrcode.min.js"></scr`+`ipt><style>body{font-family:sans-serif;text-align:center;padding:24px}h1{font-size:22px}#q{display:inline-block;margin:16px 0}a{font-size:14px;word-break:break-all}</style></head><body><h1>명제 탐구 노트</h1><div id="q"></div><div><a href="${STUURL}">${STUURL}</a></div><scr`+`ipt>setTimeout(function(){new QRCode(document.getElementById('q'),{text:${JSON.stringify(STUURL)},width:380,height:380});},300)</scr`+`ipt></body></html>`);w.document.close()}
 function autoRefresh(on){if(BTIMER){clearInterval(BTIMER);BTIMER=null}if(on)BTIMER=setInterval(()=>fetchSubmissions(true),60000);render()}
 let PRESENT=false,CLOCKT=null,LASTUPD='';
-function startPresent(){if(isTeacher()){S.view='teacher';save();presentMode(true);return}askCode()}
-function askCode(msg){document.body.classList.remove('present');
+function startPresent(){if(isTeacher()){S.view='teacher';save();presentMode(true);return}askCode('','present')}
+let CODEMODE='board';
+function askCode(msg,mode){if(mode)CODEMODE=mode;document.body.classList.remove('present');
   main.innerHTML=`<div class="card" style="max-width:460px;margin:40px auto;text-align:center">
-    <h2 style="margin:0 0 6px">📺 전자칠판 보드</h2>
-    <p class="small">교사 코드를 입력하면 이 기기에서 바로 보드가 열려요.<br>한 번만 입력하면 다음부터는 묻지 않아요.</p>
+    <h2 style="margin:0 0 6px">${CODEMODE==='present'?'📺 전자칠판 보드':'👩‍🏫 교사 보드'}</h2>
+    <p class="small">교사 코드를 입력하면 이 기기에서 바로 ${CODEMODE==='present'?'보드가 열려요':'학생 제출을 모두 볼 수 있어요'}.<br>한 번만 입력하면 다음부터는 묻지 않아요.</p>
     ${msg?`<div class="hint warn">${esc(msg)}</div>`:''}
     <p><input id="tcode" type="text" placeholder="교사 코드" style="width:220px;text-align:center;font-size:18px;border:1px solid #cfd4e2;border-radius:10px;padding:10px"></p>
-    <p><button class="btn primary" onclick="tryCode()">보드 열기</button> <button class="btn" onclick="go('home')">취소</button></p>
+    <p><button class="btn primary" onclick="tryCode()">${CODEMODE==='present'?'보드 열기':'교사 보드 열기'}</button> <button class="btn" onclick="go('home')">취소</button></p>
     <p class="small">코드: 명제교사 또는 <b>mj2026</b> (영문 입력이 편할 때)</p></div>`;
   const el=$('#tcode');if(el){el.focus();el.onkeydown=e=>{if(e.key==='Enter')tryCode()}}}
 function tryCode(){const el=$('#tcode');const v=el?el.value:'';
   if(!okCode(v)){askCode('코드가 맞지 않아요. 다시 입력해 주세요.');return}
   try{localStorage.setItem(TKEY,'1')}catch(e){}
-  S.view='teacher';save();presentMode(true)}
+  S.view='teacher';save();
+  if(CODEMODE==='present'){presentMode(true);return}
+  render();window.scrollTo({top:0})}
 function presentMode(on){PRESENT=on;document.body.classList.toggle('present',on);
   try{const u=new URL(location.href);if(on)u.searchParams.set('present','1');else u.searchParams.delete('present');history.replaceState(null,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams.toString():'')+u.hash)}catch(e){}
-  if(on){autoRefresh(true);if(!T.length)fetchSubmissions();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+  if(on){autoRefresh(true);if(!T.length)fetchSubmissions();try{const fp=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();fp&&fp.catch&&fp.catch(function(){})}catch(e){}
     if(!CLOCKT)CLOCKT=setInterval(tickClock,1000)}
   else{if(CLOCKT){clearInterval(CLOCKT);CLOCKT=null}try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}}
   render();setTimeout(drawQR,60)}
@@ -1395,7 +1418,9 @@ function renderTeacher(){if(PRESENT)return renderPresent();
       <p><label class="lbl" style="font-size:13px">학급 보기</label>
       <select onchange="BCLS=this.value;render()" style="border:1px solid #cfd4e2;border-radius:8px;padding:6px 10px">${ROSTER.map(c=>`<option value="${c.id}" ${bclass()===c.id?'selected':''}>${esc(c.label)} (${c.count}명)</option>`).join('')}</select></p>
       <p><button class="btn sm primary" onclick="presentMode(true)">📺 전자칠판 모드 (전체화면)</button></p>
-      <p class="small" style="margin:-4px 0 8px">전자칠판 브라우저에서는 <b>${esc(STUURL+'board.html')}</b> 주소를 열면 바로 이 모드로 시작해요.</p>
+      <p class="small" style="margin:-4px 0 8px">전자칠판 브라우저에서는 <b>${esc(BASEURL+'board.html')}</b> 주소를 열면 바로 이 모드로 시작해요.</p>
+      <p><button class="btn sm" onclick="window.open('board.html?stay=1','_blank')">📲 전자칠판에 앱으로 설치</button></p>
+      <p class="small" style="margin:-4px 0 8px">전자칠판 크롬에서 위 주소를 열고 <b>“앱으로 설치”</b>를 누르면, 다음부터는 바탕화면 아이콘(명제보드)만 눌러도 이 보드가 열려요.</p>
       <p><button class="btn sm primary" onclick="fetchSubmissions()">🔄 새로고침 (제출함 불러오기)</button>
       <button class="btn sm" onclick="autoRefresh(${BTIMER?'false':'true'})">${BTIMER?'⏸ 자동 새로고침 끄기':'▶ 1분마다 자동 새로고침'}</button></p>
       <p class="small">${T.length?`불러온 제출 <b>${T.length}</b>건`:'아직 제출을 불러오지 않았어요. “새로고침”을 눌러 주세요.'}</p>
@@ -1444,6 +1469,33 @@ function exportCSV(){const head=['학번','이름','날짜','완료단계','명�
 
 /* ================= 시작 ================= */
 bindMain();render();
+/* ================= 앱으로 설치 (PWA) ================= */
+const PWAKEY='myeongje-pwa-hide';
+let PWAEV=null;
+function pwaStandalone(){try{return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: minimal-ui)').matches||navigator.standalone===true}catch(e){return false}}
+function pwaIOS(){const u=navigator.userAgent;return /iPad|iPhone|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+function pwaHide(){const b=document.getElementById('pwabar');if(b)b.hidden=true}
+function pwaBar(){const b=document.getElementById('pwabar');if(!b)return;
+  if(pwaStandalone()||PRESENT||localStorage.getItem(PWAKEY)==='1')return;
+  const t=document.getElementById('pwatxt'),y=document.getElementById('pwayes');
+  if(PWAEV){t.innerHTML='📱 <b>홈 화면에 앱으로 추가</b>하면 다음 시간에 주소 없이 바로 열 수 있어요.';y.textContent='앱으로 설치';y.hidden=false}
+  else if(pwaIOS()){t.innerHTML='📱 아이폰은 아래 <b>공유 버튼</b>(⬆️)을 누르고 <b>“홈 화면에 추가”</b>를 고르면 앱처럼 쓸 수 있어요.';y.hidden=true}
+  else return;
+  b.hidden=false;pwaLift()}
+function pwaLift(){const b=document.getElementById('pwabar');if(!b||b.hidden)return;
+  const p=document.getElementById('palette');const h=p?p.offsetHeight:0;b.style.bottom=(h+12)+'px'}
+window.addEventListener('resize',pwaLift);
+function pwaInstall(){if(!PWAEV)return;const e=PWAEV;PWAEV=null;pwaHide();e.prompt();
+  if(e.userChoice)e.userChoice.then(function(){},function(){})}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();PWAEV=e;setTimeout(pwaBar,1200)});
+window.addEventListener('appinstalled',function(){PWAEV=null;pwaHide();try{localStorage.setItem(PWAKEY,'1')}catch(e){}});
+(function(){const y=document.getElementById('pwayes'),n=document.getElementById('pwano');
+  if(y)y.onclick=pwaInstall;
+  if(n)n.onclick=function(){try{localStorage.setItem(PWAKEY,'1')}catch(e){}pwaHide()};
+  setTimeout(pwaBar,1800)})();
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+
 try{const sp=new URL(location.href).searchParams;if(sp.get('present')==='1'||sessionStorage.getItem('myeongje-present')==='1'){sessionStorage.removeItem('myeongje-present');setTimeout(startPresent,150)}}catch(e){}
 </script>
 </body>
