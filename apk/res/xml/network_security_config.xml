@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <!-- 학교 망에 보안 필터(SSL 검사)가 있는 경우, 기기에 설치된 인증서도 신뢰하도록 함
+       (크롬과 같은 기준). 평문 http는 막고 https만 사용. -->
+  <base-config cleartextTrafficPermitted="false">
+    <trust-anchors>
+      <certificates src="system" />
+      <certificates src="user" />
+    </trust-anchors>
+  </base-config>
+  <!-- 같은 기기 안의 테스트 서버만 http 허용 -->
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="true">localhost</domain>
+    <domain includeSubdomains="true">127.0.0.1</domain>
+  </domain-config>
+</network-security-config>

@@ -1306,7 +1306,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-10-22c';
+const APPVER='2026-10-23a';
 const STUURL=location.origin+location.pathname;
 const BASEURL=location.origin+location.pathname.replace(/[^/]*$/,'');
 let BCLS=null,BTIMER=null;
@@ -1380,7 +1380,7 @@ function tryCode(){const el=$('#tcode');const v=el?el.value:'';
   render();window.scrollTo({top:0})}
 function presentMode(on){PRESENT=on;document.body.classList.toggle('present',on);
   try{const u=new URL(location.href);if(on)u.searchParams.set('present','1');else u.searchParams.delete('present');history.replaceState(null,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams.toString():'')+u.hash)}catch(e){}
-  if(on){autoRefresh(true);if(!T.length)fetchSubmissions();try{const fp=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();fp&&fp.catch&&fp.catch(function(){})}catch(e){}
+  if(on){autoRefresh(true);if(!T.length)fetchSubmissions(true);try{const fp=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();fp&&fp.catch&&fp.catch(function(){})}catch(e){}
     if(!CLOCKT)CLOCKT=setInterval(tickClock,1000)}
   else{if(CLOCKT){clearInterval(CLOCKT);CLOCKT=null}try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}}
   render();setTimeout(drawQR,60)}
@@ -1476,7 +1476,7 @@ function pwaStandalone(){try{return matchMedia('(display-mode: standalone)').mat
 function pwaIOS(){const u=navigator.userAgent;return /iPad|iPhone|iPod/.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
 function pwaHide(){const b=document.getElementById('pwabar');if(b)b.hidden=true}
 function pwaBar(){const b=document.getElementById('pwabar');if(!b)return;
-  if(pwaStandalone()||PRESENT||localStorage.getItem(PWAKEY)==='1')return;
+  if(pwaStandalone()||PRESENT||/MyeongjeBoardApp/.test(navigator.userAgent)||localStorage.getItem(PWAKEY)==='1')return;
   const t=document.getElementById('pwatxt'),y=document.getElementById('pwayes');
   if(PWAEV){t.innerHTML='📱 <b>홈 화면에 앱으로 추가</b>하면 다음 시간에 주소 없이 바로 열 수 있어요.';y.textContent='앱으로 설치';y.hidden=false}
   else if(pwaIOS()){t.innerHTML='📱 아이폰은 아래 <b>공유 버튼</b>(⬆️)을 누르고 <b>“홈 화면에 추가”</b>를 고르면 앱처럼 쓸 수 있어요.';y.hidden=true}
