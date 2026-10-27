@@ -331,12 +331,18 @@ const hasVar=s=>/[a-zA-Z]/.test(s);
 const hasNum=s=>/\d/.test(s);
 
 /* ================= 상태 ================= */
-let S=load()||fresh();
 function fresh(){return {v:1,student:{name:'',sid:'',cls:'',clsId:'',no:'',pin:'',date:today()},steps:{},view:'home',cur:null,updated:''}}
 let STORE=null;(function(){for(const n of ['localStorage','sessionStorage']){try{const st=window[n];st.setItem('__t','1');st.removeItem('__t');STORE=st;break}catch(e){}}})();
 const storageWeak=!STORE||STORE===window.sessionStorage;
-function load(){try{const j=(STORE||localStorage).getItem(KEY);const o=j?JSON.parse(j):null;if(o&&!o.student.pin)o.student.pin='';return o}catch(e){return null}}
-function save(){S.updated=new Date().toISOString();try{(STORE||localStorage).setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const j=(STORE||localStorage).getItem(KEY);const o=j?JSON.parse(j):null;if(!o)return null;
+  if(!o.student)o.student=fresh().student;
+  if(!o.steps)o.steps={};
+  if(!o.student.pin)o.student.pin='';
+  return o}catch(e){return null}}
+/* ↓ STORE·load() 가 모두 준비된 뒤에 불러와야 기록이 복원됩니다 (이 줄이 위에 있으면 매번 빈 화면으로 시작) */
+let S=load()||fresh();
+function save(){S.updated=new Date().toISOString();try{(STORE||localStorage).setItem(KEY,JSON.stringify(S))}catch(e){}
+  try{schedAuto()}catch(e){}}
 function st(id){return S.steps[id]||(S.steps[id]={})}
 function val(id,k){return (S.steps[id]&&S.steps[id][k])||''}
 function getP(){return val('s1','p_final')||val('s1','a')}
@@ -989,6 +995,38 @@ function okCode(c){return TEACHER_CODES.includes(String(c||'').trim())}
 /* ★ 선생님 설정: 구글 시트 수집용 Apps Script 웹 앱 주소 (README의 “제출 수집 설정” 참고). 비어 있으면 파일 저장만 가능 */
 const SUBMIT_URL='https://script.google.com/macros/s/AKfycbyUPDl7LhANpEuPPmtvsVdFMwk2e7AHymUUPUlKplGoKM8Ko9T5Sx0vTcf35TwhEQeM/exec';
 function submitUrl(){try{return localStorage.getItem('myeongje-submit-url')||SUBMIT_URL}catch(e){return SUBMIT_URL}}
+
+/* ================= 자동 저장 (제출을 누르지 않아도 선생님 제출함에 보관) ================= */
+let AUTO_T=null,AUTO_LAST=0,AUTO_SIG='',AUTO_BUSY=false,AUTO_AT='',AUTO_WARN=false;
+function autoReady(){try{return !isTeacher()&&!!submitUrl()&&!missingStudent().length}catch(e){return false}}
+function autoSig(){try{return JSON.stringify(S.steps)+'|'+S.student.sid}catch(e){return ''}}
+function autoPayload(){const done=STEPS.filter(x=>st(x.id).done).length;
+  return {auto:1,student:S.student,done:done,total:STEPS.length,
+    lessons:LESSONS.filter(L=>L.steps.every(id=>st(id).done)).length,
+    answers:flatAnswers(S),state:S}}
+function schedAuto(ms){if(!autoReady())return;clearTimeout(AUTO_T);AUTO_T=setTimeout(function(){autoSave()},ms||20000)}
+async function autoSave(force){
+  if(!autoReady())return;
+  const sig=autoSig();
+  if(!force&&sig===AUTO_SIG)return;                       // 바뀐 내용이 없으면 보내지 않음
+  const gap=Date.now()-AUTO_LAST;
+  if(!force&&gap<120000){schedAuto(120000-gap);return}     // 너무 자주 보내지 않도록 (2분 간격)
+  if(AUTO_BUSY){schedAuto(15000);return}
+  AUTO_BUSY=true;
+  try{const r=await fetch(submitUrl(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(autoPayload())});
+    const j=await r.json();if(!j.ok)throw new Error(j.error||'server');
+    AUTO_SIG=sig;AUTO_LAST=Date.now();AUTO_WARN=false;
+    AUTO_AT=new Date().toTimeString().slice(0,5);
+    S.lastAuto=new Date().toISOString();try{(STORE||localStorage).setItem(KEY,JSON.stringify(S))}catch(e){}
+    renderWho()}
+  catch(e){AUTO_WARN=true;renderWho();schedAuto(60000)}     // 인터넷이 돌아오면 다시 시도
+  finally{AUTO_BUSY=false}}
+/* 화면을 덮거나 앱을 닫을 때 마지막 내용을 한 번 더 보냄 */
+function autoBeacon(){if(!autoReady())return;const sig=autoSig();if(sig===AUTO_SIG)return;
+  try{if(navigator.sendBeacon&&navigator.sendBeacon(submitUrl(),new Blob([JSON.stringify(autoPayload())],{type:'text/plain;charset=utf-8'})))AUTO_SIG=sig}catch(e){}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')autoBeacon();else schedAuto(3000)});
+window.addEventListener('pagehide',autoBeacon);
+setInterval(function(){autoSave()},120000);
 async function submitToTeacher(){const url=submitUrl();
   if(!url){alert('아직 제출 주소가 설정되지 않았어요. “저장” 버튼으로 파일을 내려받아 선생님께 보내 주세요.');return}
   if(!ensureIdentity())return;
@@ -1047,7 +1085,7 @@ function renderSidebar(){const el=$('#sidebar');let last=null;el.innerHTML=STEPS
   return h+`<button class="navitem ${sst} ${act?'active':''}" onclick="go('step','${s.id}')"><span class="dot">${sst==='done'?'✓':i+1}</span><span class="t">${s.title}</span></button>`}).join('')+
   `<h3 style="margin-top:14px">기록</h3><button class="navitem ${S.view==='report'?'active':''}" onclick="go('report')"><span class="dot">📄</span><span class="t">활동 기록 · 출력</span></button>
    <button class="navitem ${S.view==='teacher'?'active':''}" onclick="go('teacher')"><span class="dot">👩‍🏫</span><span class="t">교사 보드</span></button>`}
-function renderWho(){const s=S.student;const done=STEPS.filter(x=>st(x.id).done).length;$('#who').textContent=(s.no?`${s.cls?s.cls+' ':''}${s.no}번${nameOf(s.clsId,s.no)?' '+nameOf(s.clsId,s.no):''}`:'이름을 입력해 주세요')+` · ${done}/${STEPS.length}단계 완료`+(isTeacher()?' · 👩‍🏫 교사 모드':'')}
+function renderWho(){const s=S.student;const done=STEPS.filter(x=>st(x.id).done).length;$('#who').textContent=(s.no?`${s.cls?s.cls+' ':''}${s.no}번${nameOf(s.clsId,s.no)?' '+nameOf(s.clsId,s.no):''}`:'이름을 입력해 주세요')+` · ${done}/${STEPS.length}단계 완료`+(isTeacher()?' · 👩‍🏫 교사 모드':AUTO_WARN?' · ⚠ 자동 저장 대기 중(인터넷 확인)':AUTO_AT?` · ✓ 자동 저장 ${AUTO_AT}`:'')}
 function render(){ensureClass();renderSidebar();renderWho();
   if(S.view==='step'&&S.cur)renderStep(STEPS.find(s=>s.id===S.cur));
   else if(S.view==='report')renderReport();
@@ -1064,7 +1102,7 @@ function renderHome(){const s=S.student;
   <tr><th>Ⅴ. 교과서로 확장하기</th><td>정의·정리와 증명(대우·귀류법), 절대부등식</td></tr>
   <tr><th>Ⅵ. 마무리</th><td>성찰·자기평가 → <b>활동 기록</b> 인쇄 / Word 제출</td></tr></table>
   <p class="small" style="margin-top:8px">수업은 아래 <b>10차시</b>로 진행돼요. 각 차시의 첫 화면에 학습 목표가 표시되고, 수업이 끝나거나 끊길 때는 상단의 <b>📤 제출</b>을 누르세요.</p>
-  <div class="hint info">✍️ 입력한 내용은 이 기기에 자동 저장되고, <b>📤 제출</b>을 누르면 선생님 제출함에 보관돼요. 다른 기기에서 이어서 하려면 아래 <b>내 기록 불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div>
+  <div class="hint info">✍️ 입력한 내용은 이 기기에 저장되고, <b>잠시 뒤 선생님 제출함에도 자동으로 올라가요.</b> 제출 버튼을 누르지 않아도 괜찮아요. (화면 위쪽에 <b>✓ 자동 저장 시각</b>이 표시돼요. 수업을 마칠 때 <b>📤 제출</b>을 한 번 눌러 두면 더 확실해요.) 다른 기기에서 이어서 하려면 아래 <b>내 기록 불러오기</b>를 사용하세요. 활동이 끝나면 <b>활동 기록</b>에서 보고서를 인쇄하거나 Word 파일로 받을 수 있어요.</div>
   <p class="noprint" style="text-align:right;margin:10px 0 0"><button class="btn sm" onclick="${isTeacher()?`go('teacher')`:`enterTeacher()`}">👩‍🏫 선생님용</button></p></div>
   ${isTeacher()?`<div class="card noprint" style="border-color:var(--brand)"><h3>👩‍🏫 교사 모드로 보는 중</h3><p class="small">학생 정보 없이 모든 단계를 둘러볼 수 있고, 각 단계 끝에 <b>교과서 문제</b>가 함께 표시돼요. 단계 안의 내용은 <b>초안 제출 → 판정 기준</b> 순서라, 판정 기준·모범 답안을 바로 보려면 각 화면의 <b>“기준 미리 보기”</b> 버튼을 누르세요.</p><p><button class="btn sm" onclick="setTeacher(false)">교사 모드 끄기</button> <button class="btn sm" onclick="go('teacher')">👩‍🏫 교사용 취합으로</button></p></div>`:''}
   <div class="card"><h3>학생 정보</h3><div class="grid2">
@@ -1073,7 +1111,7 @@ function renderHome(){const s=S.student;
    <label class="field"><span class="lbl">날짜</span><input type="text" data-s="date" value="${esc(s.date)}"></label>
    <label class="field"><span class="lbl">제출 비밀번호 (숫자 4자리) <span class="req">*</span></span><input type="text" inputmode="numeric" maxlength="4" data-s="pin" value="${esc(s.pin||'')}" placeholder="예: 0315" class="${/^\d{4}$/.test(s.pin||'')?'':'miss'}"><small class="help">다른 기기·다음 시간에 “내 기록 불러오기”로 이어서 할 때 본인 확인용이에요. 잊지 않을 숫자로 정하세요.</small></label></div>
    <p class="small" style="margin:0">${isTeacher()?'👩‍🏫 <b>교사 모드</b>라서 학생 정보를 넣지 않아도 모든 화면을 둘러볼 수 있어요. (학생은 별표 항목을 모두 입력해야 진행돼요)':`학급과 출석 번호를 고르고, 제출 비밀번호 4자리를 정하세요. 별표(*)를 모두 채워야 학습 단계로 넘어갈 수 있어요.${s.sid?` <b>내 번호: ${esc(s.sid)}</b>`:''}`}</p>
-   <div class="hint ${storageWeak?'warn':'info'}" style="margin-top:4px">${storageWeak?'⚠️ 이 브라우저는 기록을 오래 보관하지 못해요(카카오톡·네이버 앱 안의 브라우저이거나 시크릿 모드). <b>수업이 끝나기 전에 꼭 📤 제출</b>하고, 다음 시간에는 아래 “내 기록 불러오기”로 이어서 하세요. 가능하면 Chrome·Safari로 열어 주세요.':'💡 수업이 끊길 때는 그 자리에서 <b>📤 제출</b>을 누르세요. 다음 시간에 같은 기기면 자동으로 이어지고, 다른 기기면 아래 “내 기록 불러오기”로 이어서 할 수 있어요.'}</div>
+   <div class="hint ${storageWeak?'warn':'info'}" style="margin-top:4px">${storageWeak?'⚠️ 이 브라우저는 기록을 오래 보관하지 못해요(카카오톡·네이버 앱 안의 브라우저이거나 시크릿 모드). <b>수업이 끝나기 전에 꼭 📤 제출</b>하고, 다음 시간에는 아래 “내 기록 불러오기”로 이어서 하세요. 가능하면 Chrome·Safari로 열어 주세요.':'💡 수업이 끊겨도 <b>자동으로 저장</b>되니 그냥 두어도 괜찮아요. 다음 시간에 같은 기기면 자동으로 이어지고, 다른 기기면 아래 “내 기록 불러오기”로 이어서 할 수 있어요.'}</div>
    <p style="margin:10px 0 0"><button class="btn sm" onclick="loadMine()">📥 내 기록 불러오기 (제출한 기록에서)</button> ${S.lastSubmit?`<span class="small">마지막 제출: ${esc(S.lastSubmit.replace('T',' ').slice(0,16))}</span>`:''}</p></div>
   <div class="card"><h3>차시별 학습 계획</h3><div style="overflow:auto"><table class="lessons"><tr><th style="width:52px">차시</th><th>주제 · 학습 목표</th><th style="width:38%">활동 화면</th><th style="width:64px">상태</th></tr>
   ${LESSONS.map(L=>{const ls=lessonStatus(L);return `<tr><td class="ln">${L.n}</td><td><b>${esc(L.title)}</b><div class="small">${esc(L.goal)}</div></td><td>${L.steps.map(id=>{const x=STEPS.find(z=>z.id===id);const i=STEPS.indexOf(x);const ss=stepStatus(x);return `<button class="lstep ${ss}" onclick="go('step','${id}')">${i+1}. ${esc(x.title)}</button>`}).join('')}</td><td>${ls==='done'?'<span class="pill ok">완료</span>':ls==='started'?'<span class="pill todo">진행 중</span>':''}</td></tr>`}).join('')}</table></div>
@@ -1156,7 +1194,7 @@ function finishStep(sid){const s=STEPS.find(x=>x.id===sid);const i=STEPS.indexOf
   else{const m=missing(sid,s.draft);if(m.length){alert('필수 항목을 먼저 써 주세요:\n· '+m.join('\n· '));return}
     if(s.quizOnly&&s.quizzes.length){const d=st(sid);const un=s.quizzes.map((q,qi)=>{const ans=d[qkey(qi)]||{};return q.items.filter((_,j)=>!ans[j]).length}).reduce((a,b)=>a+b,0);if(un){alert(`아직 풀지 않은 문항이 ${un}개 있어요. 모두 푼 뒤 채점해 주세요.`);return}
       if(!s.quizzes.every((q,qi)=>d[qkey(qi)+'Checked'])){alert('“채점하기 / 정답 보기”를 눌러 채점한 뒤 넘어가세요.');return}}}
-  st(sid).done=true;st(sid).doneAt=new Date().toISOString();save();
+  st(sid).done=true;st(sid).doneAt=new Date().toISOString();save();try{autoSave(true)}catch(e){}
   if(i<STEPS.length-1)go('step',STEPS[i+1].id);else go('report')}
 function resetAll(){if(confirm('모든 기록을 지우고 처음부터 시작할까요? (먼저 “저장”으로 파일을 내려받아 두는 것을 권해요)')){S=fresh();save();render()}}
 
@@ -1306,7 +1344,7 @@ function exportDocFallback(state){const html=`<html xmlns:o="urn:schemas-microso
 
 /* ================= 교사용 취합 ================= */
 let T=[];
-const APPVER='2026-10-23a';
+const APPVER='2026-10-27b';
 const STUURL=location.origin+location.pathname;
 const BASEURL=location.origin+location.pathname.replace(/[^/]*$/,'');
 let BCLS=null,BTIMER=null;

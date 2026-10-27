@@ -38,15 +38,43 @@ function doPost(e) {
     const parts = [];
     for (let i = 0; i < json.length; i += CHUNK) parts.push(json.slice(i, i + CHUNK));
     const row = [new Date(), st.cls || '', st.sid || '', st.name || '', d.done || 0, d.total || 0, d.lessons || 0, parts.length].concat(parts);
-    sh.appendRow(row);
+
+    // 자동 저장(d.auto)은 학생마다 '한 줄'만 쓰고 계속 덮어쓴다 → 시트가 커지지 않음
+    // 직접 누른 제출은 지금까지처럼 한 줄씩 쌓인다 (기록 보존)
+    let r = d.auto ? autoRow_(sh, st) : 0;
+    if (r) {
+      const width = Math.max(row.length, sh.getLastColumn());
+      const vals = row.concat(new Array(Math.max(0, width - row.length)).fill(''));
+      sh.getRange(r, 1, 1, vals.length).setValues([vals]);
+    } else {
+      sh.appendRow(row);
+      r = sh.getLastRow();
+      if (d.auto) rememberAutoRow_(st, r);
+    }
     // 학급·학번이 날짜/숫자로 자동 변환되지 않도록 텍스트 서식으로 다시 기록
-    const r = sh.getLastRow();
     sh.getRange(r, 2, 1, 3).setNumberFormat('@').setValues([[String(st.cls || ''), String(st.sid || ''), String(st.name || '')]]);
     if (d.answers && d.answers.length) upsertAnswers_(d.answers);
     return out_({ ok: true });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
   }
+}
+
+/* 자동 저장 줄 찾기 — 학생마다 한 줄을 정해 두고 계속 덮어쓴다 */
+function autoKey_(st) { return 'autorow:' + String((st && (st.sid || st.name)) || ''); }
+function autoRow_(sh, st) {
+  try {
+    const r = Number(PropertiesService.getDocumentProperties().getProperty(autoKey_(st)) || 0);
+    if (!r || r < 2 || r > sh.getLastRow()) return 0;
+    const sid = String(sh.getRange(r, 3).getValue()).trim();
+    const nm = String(sh.getRange(r, 4).getValue()).trim();
+    const okSid = sid && sid === String(st.sid || '').trim();
+    const okNm = !sid && nm && nm === String(st.name || '').trim();
+    return (okSid || okNm) ? r : 0;      // 줄이 밀렸거나 지워졌으면 새로 만든다
+  } catch (err) { return 0; }
+}
+function rememberAutoRow_(st, r) {
+  try { PropertiesService.getDocumentProperties().setProperty(autoKey_(st), String(r)); } catch (err) {}
 }
 
 /* '답변' 탭: 학생 한 명 = 한 줄, 필수 답변마다 한 열. 같은 학번+이름이 다시 제출하면 그 줄을 덮어쓴다 */
